@@ -474,14 +474,11 @@ Automaton applyMinimizationSequence(const Automaton& aut_i,
     float refin;
     vector<bool> column(greatest_state+1);
     Automaton aut;
-    //printAut(aut_i);
 
     aut = removeUselessStates(aut_i);
 
-    //printAut(aut);
-
     /* Computing the dw-la sim. */
-    outputText("Computing the dw-" + std::to_string(la_dw) + " simulation... \n", log_humanread_filename);
+    if (log_humanread_filename != "") outputText("Computing the dw-" + std::to_string(la_dw) + " simulation... \n", log_humanread_filename);
     vector<vector<bool> > dw_la(greatest_state+1, column);
     start = std::chrono::high_resolution_clock::now();
     if (la_dw==1 && use_lvata)
@@ -499,43 +496,34 @@ Automaton applyMinimizationSequence(const Automaton& aut_i,
             = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
     sizesRel[DW_LA_1ST_TIME] = getSizeOfRel(dw_la, greatest_state+1);
     numbRefs[DW_LA_1ST_TIME] = refin;
-    outputText("The dw-" + std::to_string(la_dw) + " simulation has "
+    if (log_humanread_filename != "") outputText("The dw-" + std::to_string(la_dw) + " simulation has "
                + std::to_string(sizesRel[DW_LA_1ST_TIME]) + " pairs ", log_humanread_filename);
     if (!(la_dw==1 && use_lvata))
-            outputText(" and took " + std::to_string(numbRefs[DW_LA_1ST_TIME]) + " matrix-refinements ",
+            if (log_humanread_filename != "") outputText(" and took " + std::to_string(numbRefs[DW_LA_1ST_TIME]) + " matrix-refinements ",
                        log_humanread_filename);
-    outputText("and " + std::to_string(timesRel[DW_LA_1ST_TIME]) + " seconds to compute. ",
+    if (log_humanread_filename != "") outputText("and " + std::to_string(timesRel[DW_LA_1ST_TIME]) + " seconds to compute. ",
                log_humanread_filename);
-
-    //printW(aut, dw_la, greatest_state+1);
 
     /* Quotient with dw-la sim. */
     start = std::chrono::high_resolution_clock::now();
     aut = quotientAutomaton(aut,transClosure(dw_la, greatest_state+1), greatest_state+1);
     elapsed = std::chrono::high_resolution_clock::now() - start;
     timesQuot[QUOT_WITH_DW_LA] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
-    outputText("The quotienting took " + std::to_string(timesQuot[QUOT_WITH_DW_LA])
+    if (log_humanread_filename != "") outputText("The quotienting took " + std::to_string(timesQuot[QUOT_WITH_DW_LA])
                + " seconds ", log_humanread_filename);
-
-    //printAut(aut, &stateDict);
 
     /* Prune with P(id,dw-la sim). */
     start = std::chrono::high_resolution_clock::now();
     aut = prune(aut, generateIdRelation(greatest_state+1), dw_la, true);
-    // We must generate the id relation based on the number of states which existed before the quotienting, since the quotienting does not force the reindexing of the states. Alternatively, we could try to force this reindexation.
     elapsed = std::chrono::high_resolution_clock::now() - start;
     timesPrun[PRUN_WITH_P_ID_AND_DW_LA] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
-    outputText("and the pruning took " + std::to_string(timesPrun[PRUN_WITH_P_ID_AND_DW_LA]) + " seconds. ",
+    if (log_humanread_filename != "") outputText("and the pruning took " + std::to_string(timesPrun[PRUN_WITH_P_ID_AND_DW_LA]) + " seconds. ",
                log_humanread_filename);
-
-    //printAut(aut, &stateDict);
 
     aut = removeUselessStates(aut);
 
-    //printAut(aut, &stateDict);
-
     /* Computing the up-la(id) sim. */
-    outputText("\nComputing the up-" + std::to_string(la_up) + "(id) simulation... \n",
+    if (log_humanread_filename != "") outputText("\nComputing the up-" + std::to_string(la_up) + "(id) simulation... \n",
                log_humanread_filename);
     start = std::chrono::high_resolution_clock::now();
     vector<vector<bool> > up_la_with_id_1st_time(greatest_state+1, column);
@@ -547,7 +535,7 @@ Automaton applyMinimizationSequence(const Automaton& aut_i,
     numbRefs[UP_LA_WITH_ID_1ST_TIME] = refin;
     timesRel[UP_LA_WITH_ID_1ST_TIME] =
             std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
-    outputText("The up-" + std::to_string(la_up) + "(id) simulation has "
+    if (log_humanread_filename != "") outputText("The up-" + std::to_string(la_up) + "(id) simulation has "
               + std::to_string(sizesRel[UP_LA_WITH_ID_1ST_TIME]) + " pairs and it took "
               + std::to_string(numbRefs[UP_LA_WITH_ID_1ST_TIME]) + " matrix-refinements and "
               + std::to_string(timesRel[UP_LA_WITH_ID_1ST_TIME]) + " seconds to compute and ",
@@ -558,7 +546,7 @@ Automaton applyMinimizationSequence(const Automaton& aut_i,
     aut = quotientAutomaton(aut, transClosure(up_la_with_id_1st_time,greatest_state+1), greatest_state+1);
     elapsed = std::chrono::high_resolution_clock::now() - start;
     timesQuot[QUOT_WITH_UP_LA_WITH_ID_1ST] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
-    outputText("the quotienting took " + std::to_string(timesQuot[QUOT_WITH_UP_LA_WITH_ID_1ST])
+    if (log_humanread_filename != "") outputText("the quotienting took " + std::to_string(timesQuot[QUOT_WITH_UP_LA_WITH_ID_1ST])
               + " seconds. ", log_humanread_filename);
 
     //printAut(aut, &stateDict);
@@ -569,13 +557,13 @@ Automaton applyMinimizationSequence(const Automaton& aut_i,
     aut = prune(aut, up_la_with_id_1st_time, generateIdRelation(greatest_state+1), false);
     elapsed = std::chrono::high_resolution_clock::now() - start;
     float seconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
-    outputText("The pruning with P(strict up-la(id) sim, id) took " + std::to_string(seconds) + " seconds. ",
+    if (log_humanread_filename != "") outputText("The pruning with P(strict up-la(id) sim, id) took " + std::to_string(seconds) + " seconds. ",
                log_humanread_filename);
 
     aut = removeUselessStates(aut);
 
     /* Computing the strict up-1(id) sim. */
-    outputText("\nComputing the strict up-1(id) simulation... \n", log_humanread_filename);
+    if (log_humanread_filename != "") outputText("\nComputing the strict up-1(id) simulation... \n", log_humanread_filename);
     vector<vector<bool> > strict_up_1_with_id (greatest_state+1, column);
     start = std::chrono::high_resolution_clock::now();
     refin = up_simulation_strict(aut, 1, generateIdRelation(greatest_state+1), false, strict_up_1_with_id, greatest_state+1, greatest_symbol+1, ranks);
@@ -583,18 +571,16 @@ Automaton applyMinimizationSequence(const Automaton& aut_i,
     sizesRel[STRICT_UP_1_WITH_ID] = getSizeOfRel(strict_up_1_with_id, greatest_state+1);
     numbRefs[STRICT_UP_1_WITH_ID] = refin;
     timesRel[STRICT_UP_1_WITH_ID] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
-    outputText("The strict up-1(id) simulation has " + std::to_string(sizesRel[STRICT_UP_1_WITH_ID])
+    if (log_humanread_filename != "") outputText("The strict up-1(id) simulation has " + std::to_string(sizesRel[STRICT_UP_1_WITH_ID])
               + " pairs and the computation of the relation took "
               + std::to_string(numbRefs[STRICT_UP_1_WITH_ID]) + " matrix-refinements and "
               + std::to_string(timesRel[STRICT_UP_1_WITH_ID]) + " seconds. ", log_humanread_filename);
 
     /* Computing the dw-la sim again. */
-    outputText("\nComputing the dw-" + std::to_string(la_dw) + " simulation again... \n",
+    if (log_humanread_filename != "") outputText("\nComputing the dw-" + std::to_string(la_dw) + " simulation again... \n",
                log_humanread_filename);
     dw_la.assign(greatest_state, column);
     start = std::chrono::high_resolution_clock::now();
-
-    //refin = dw_simulation(aut, la_dw, dw_la, greatest_state+1, ranks, timeout);
 
     if (la_dw==1 && use_lvata)
     {
@@ -610,7 +596,7 @@ Automaton applyMinimizationSequence(const Automaton& aut_i,
     timesRel[DW_LA_2ND_TIME] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
     sizesRel[DW_LA_2ND_TIME] = getSizeOfRel(dw_la, greatest_state);
     numbRefs[DW_LA_2ND_TIME] = refin;
-    outputText("The dw-" + std::to_string(la_dw) + " simulation has " + std::to_string(sizesRel[DW_LA_2ND_TIME])
+    if (log_humanread_filename != "") outputText("The dw-" + std::to_string(la_dw) + " simulation has " + std::to_string(sizesRel[DW_LA_2ND_TIME])
               + " pairs and took " + std::to_string(numbRefs[DW_LA_2ND_TIME])
               + " matrix-refinements and " + std::to_string(timesRel[DW_LA_2ND_TIME])
               + " seconds to compute. ",
@@ -622,18 +608,14 @@ Automaton applyMinimizationSequence(const Automaton& aut_i,
     elapsed = std::chrono::high_resolution_clock::now() - start;
     timesPrun[PRUN_WITH_P_UP_1_WITH_ID_AND_DW_LA]
             = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
-    outputText("The pruning took " + std::to_string(timesPrun[PRUN_WITH_P_UP_1_WITH_ID_AND_DW_LA])
+    if (log_humanread_filename != "") outputText("The pruning took " + std::to_string(timesPrun[PRUN_WITH_P_UP_1_WITH_ID_AND_DW_LA])
                + " seconds. ",
                log_humanread_filename);
 
-    //printAut(aut, &stateDict);
-
     aut = removeUselessStates(aut);
 
-    //printAut(aut, &stateDict);
-
     /* Computing the up-la(id) sim. again */
-    outputText("\nComputing the up-" + std::to_string(la_up) + "(id) simulation again... \n",
+    if (log_humanread_filename != "") outputText("\nComputing the up-" + std::to_string(la_up) + "(id) simulation again... \n",
                log_humanread_filename);
     start = std::chrono::high_resolution_clock::now();
     vector<vector<bool> > up_la_with_id_2nd_time(greatest_state+1, column);
@@ -644,7 +626,7 @@ Automaton applyMinimizationSequence(const Automaton& aut_i,
             = getSizeOfRel(up_la_with_id_2nd_time, greatest_state+1);
     numbRefs[UP_LA_WITH_ID_2ND_TIME] = refin;
     timesRel[UP_LA_WITH_ID_2ND_TIME] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
-    outputText("The up-" + std::to_string(la_up) + "(id) simulation has "
+    if (log_humanread_filename != "") outputText("The up-" + std::to_string(la_up) + "(id) simulation has "
               + std::to_string(sizesRel[UP_LA_WITH_ID_2ND_TIME]) + " pairs and it took "
               + std::to_string(numbRefs[UP_LA_WITH_ID_2ND_TIME]) + " matrix-refinements and "
               + std::to_string(timesRel[UP_LA_WITH_ID_2ND_TIME]) + " seconds to compute and ",
@@ -657,17 +639,14 @@ Automaton applyMinimizationSequence(const Automaton& aut_i,
                             greatest_state+1);
     elapsed = std::chrono::high_resolution_clock::now() - start;
     timesQuot[QUOT_WITH_UP_LA_WITH_ID_2ND] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
-    outputText("the quotienting took "
+    if (log_humanread_filename != "") outputText("the quotienting took "
               + std::to_string(timesQuot[QUOT_WITH_UP_LA_WITH_ID_2ND]) + " seconds. ",
                log_humanread_filename);
 
-    //printAut(aut, &stateDict);
-
     /* Computing the dw-1 sim. */
-    outputText("\nComputing the dw-1 simulation... \n",
+    if (log_humanread_filename != "") outputText("\nComputing the dw-1 simulation... \n",
                log_humanread_filename);
     start = std::chrono::high_resolution_clock::now();
-    //aut = removeInitialState(aut);
     vector<vector<bool> > dw_1 (greatest_state+1, column);
     dw_ord_simulation_lvata(aut, dw_1, greatest_state+1);
     refin = 0;
@@ -675,13 +654,12 @@ Automaton applyMinimizationSequence(const Automaton& aut_i,
     timesRel[DW_1] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
     sizesRel[DW_1] = getSizeOfRel(dw_1, greatest_state+1);
     numbRefs[DW_1] = refin;
-    outputText("The dw-1 simulation has " + std::to_string(sizesRel[DW_1])
+    if (log_humanread_filename != "") outputText("The dw-1 simulation has " + std::to_string(sizesRel[DW_1])
                + " and took " + std::to_string(timesRel[DW_1]) + " seconds to compute. ",
                log_humanread_filename);
 
-
     /* Computing the up-la(dw-1) sim */
-    outputText("\nComputing the up-" + std::to_string(la_up) + "(dw-1) simulation... \n",
+    if (log_humanread_filename != "") outputText("\nComputing the up-" + std::to_string(la_up) + "(dw-1) simulation... \n",
                log_humanread_filename);
     start = std::chrono::high_resolution_clock::now();
     vector<vector<bool> > up_la_with_dw_1 (greatest_state+1,column);
@@ -691,7 +669,7 @@ Automaton applyMinimizationSequence(const Automaton& aut_i,
     sizesRel[UP_LA_WITH_DW_1] = getSizeOfRel(up_la_with_dw_1, greatest_state+1);
     numbRefs[UP_LA_WITH_DW_1] = refin;
     timesRel[UP_LA_WITH_DW_1] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
-    outputText("The up-" + std::to_string(la_up) + "(dw-1) simulation has "
+    if (log_humanread_filename != "") outputText("The up-" + std::to_string(la_up) + "(dw-1) simulation has "
               + std::to_string(sizesRel[UP_LA_WITH_DW_1])
               + " pairs and the computation of the relation took "
               + std::to_string(numbRefs[UP_LA_WITH_DW_1]) + " matrix-refinements and "
@@ -703,15 +681,11 @@ Automaton applyMinimizationSequence(const Automaton& aut_i,
     aut = prune(aut, up_la_with_dw_1, dw_1, true);
     elapsed = std::chrono::high_resolution_clock::now() - start;
     timesPrun[PRUN_WITH_P_UP_LA_WITH_DW_1_AND_DW_1] = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
-    outputText("the pruning took " + std::to_string(timesPrun[PRUN_WITH_P_UP_LA_WITH_DW_1_AND_DW_1])
+    if (log_humanread_filename != "") outputText("the pruning took " + std::to_string(timesPrun[PRUN_WITH_P_UP_LA_WITH_DW_1_AND_DW_1])
                + " seconds. \n",
                log_humanread_filename);
 
-    //printAut(aut, &stateDict);
-
     aut = removeUselessStates(aut);
-
-    //printAut(aut, &stateDict);
 
     if (testData.numb_relations > 0)
     {

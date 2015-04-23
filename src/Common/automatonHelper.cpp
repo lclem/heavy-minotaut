@@ -699,6 +699,8 @@ float measureTransDensReduction(const Automaton& smaller, const Automaton& large
 }
 
 void printAut(const Automaton& aut, stateDict* dict) {
+    dict = NULL;        // I've given up printing fancy states names and considering whether the initial state is implicit or not.
+
     /* Print the used states */
     stateSet states = getUsedStates(aut);
     std::cout << "Q contains " << states.size() << " (used) states. ";
@@ -773,6 +775,54 @@ void printAut(const Automaton& aut, stateDict* dict) {
     }
 
     std::cout << std::flush;
+}
+
+string autToStringTimbuk(const Automaton& aut, stateDict* dict)
+{
+    dict = NULL;        // I've given up printing fancy states names and considering whether the initial state is implicit or not.
+    string result;
+
+    result = "Ops \n";
+    result += "Automaton anonymous \n";
+
+    stateSet states = getUsedStates(aut);
+    result += "States ";
+    for (const state& s : states)
+    {
+        //result += (dict==NULL ? "" : translateState(aut, *dict, s)) + " ";
+        result += std::to_string(s) + " ";
+    }
+    result += "\n";
+
+    finalStateSet f = aut.GetFinalStates();
+    result += "Final States ";
+    for (const state& s : f)
+    {
+        //result += (dict==NULL ? "" : translateState(aut, *dict, s)) + " ";
+        result += std::to_string(s) + " ";
+    }
+    result += "\n";
+
+    result += "Transitions \n";
+    for (const lv_transition& trans : aut)
+    {
+        //result += trans.GetSymbol() + "(" + Convert::ToString(trans.GetChildren()) + ") -> " + translateState(aut, *dict, trans.GetParent()) + "\n";
+        result += std::to_string(trans.GetSymbol()) + "(";
+        /*for (const state& s : trans.GetChildren())
+            result += translateState(aut, *dict, s);*/
+
+        for(unsigned int i=0; i<trans.GetChildren().size(); i++)
+        {
+            //result += translateState(aut, *dict, trans.GetChildren().at(i));
+            result += std::to_string(trans.GetChildren().at(i));
+            if (i < trans.GetChildren().size()-1)
+                result += ",";
+        }
+        //result += ") -> " + translateState(aut, *dict, trans.GetParent()) + "\n";
+        result += ") -> " + std::to_string(trans.GetParent()) + "\n";
+    }
+
+    return result;
 }
 
 void printAutData(const Automaton& aut, bool printTransOverlap) {

@@ -66,6 +66,7 @@ state reindexStates(Automaton& aut);
 bool equiv(const Automaton &aut1, const Automaton &aut2);
 bool langIsEmpty(const Automaton& aut);
 //bool equiv_(Automaton aut1, Automaton aut2);
+string autToStringTimbuk(const Automaton& aut, stateDict* dict = NULL);
 void printAut(const Automaton &, stateDict * = NULL);
 void printAutData(const Automaton &aut, bool printTransOverlap = false);
 

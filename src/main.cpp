@@ -8,7 +8,6 @@ long int TIMEOUT = 10*60;    // seconds
 int main(int argc, char* argv[])
 {
     startOPT();
-    simple_Heavy_tester(1, 1, "test automata/random_tabakov_vardi_timbuk/samples of 50 TA each/1<=td<=7 and 0.1<=ad<=0.9/tv_q=100_sigma=2_td=1.0_ad=0.1//");
 
     if (argc == 0)
     {
