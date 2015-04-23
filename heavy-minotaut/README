@@ -1,0 +1,82 @@
+############################################################################################
+#											   #
+#                          	Heavy MinOTAut						   #
+#		- Heavy Minimization algorithms of Tree Automata			   #
+#											   #
+############################################################################################
+
+
+
+Downloading
+===========
+
+To download Heavy MinOTAut, run
+
+$ git clone https://github.com/ric-almeida/heavy-minotaut.git
+
+
+Installation
+============
+
+1) Install libvata (see ../ondrik-libvata/README for more info)
+
+2) Run $ make minotaut
+
+
+Input Format
+============
+
+libvata so far supports only the Timbuk format of tree automata. The format is
+specified by the following grammar with the start symbol <file>:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  <file>            : 'Ops' <label_list> <automaton>
+
+  <label_list>      : <label_decl> <label_decl> ... // a list of label declarations
+
+  <label_decl>      : string ':' int // a symbol declaration (the name and the arity)
+
+  <automaton>       : 'Automaton' string 'States' <state_list> 'Final States' <state_list> 'Transitions' <transition_list>
+
+  <state_list>      : <state> <state> ... // a list of states
+
+  <state>           : string // the name of a state
+
+  <transition_list> : <transition> <transition> ... // a list of transitions
+
+  <transition>      : <label> '(' <state> ',' <state> ',' ... ')' '->' <state> // a transition
+
+  <label>           : string // the name of a label
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An example could look like this:
+
+~~~~~~~~~~~~~~~~~~~~~
+Ops a:0 b:1 c:2
+
+Automaton A
+States q0 q1 q2
+Final States q2 
+Transitions
+a() -> q0
+b(q0) -> q1
+c(q1, q1) -> q1
+c(q1, q1) -> q2
+c(q2, q2) -> q2
+~~~~~~~~~~~~~~~~~~~~~
+
+
+Usage Example
+=============
+
+Let dir be a directory where (at least) one tree automaton is saved as a file (using the Timbuk format; see Input Format). 
+By calling
+
+	$ ./minotaut la-dw la-up dir [timeout] 
+
+for each file 'file' in dir, a new file called 'file_minimized_with_Heavy(la-dw,la-up)' will be created, as a result of applying
+Heavy(la-dw,la-up) to the automaton in 'file'. The optional timeout parameter must be in seconds and applies to each application of the
+Heavy method to an automaton. 
+
