@@ -560,7 +560,6 @@ void simple_Heavy_tester(unsigned int la_dw, unsigned int la_up, string dir/*, i
 {
     MetaData metaData             =  MetaData();
     TestData testData_heavy       =  TestData();
-    TestData testData_heavy_rels  =  emptyTestData;
     Timeout timeout_heavy         =  Timeout();
 
     vector<filename> filenames = getAllFilenames(dir);
@@ -576,7 +575,7 @@ void simple_Heavy_tester(unsigned int la_dw, unsigned int la_up, string dir/*, i
         /* Parsing and taking data from the automaton. */
         stateDict sDict;
         Automaton aut_i = parseFromString(autStr, sDict, false, false);
-        //printAut(aut_i);
+        //std::cout << autToStringTimbuk(aut_i, &sDict) << std::endl;
 
         if (getNumbTransitions(aut_i) == 0)
         {
@@ -597,19 +596,14 @@ void simple_Heavy_tester(unsigned int la_dw, unsigned int la_up, string dir/*, i
                                        measureTransOverlaps(aut_i));
 
         /* Applying Heavy(k,j). */
-        string headline = "Applying Heavy(" + std::to_string(la_dw) + ", "
+        /*string headline = "Applying Heavy(" + std::to_string(la_dw) + ", "
                 + std::to_string(la_up) + ")...";
-        outputText("\n" + headline + "\n");
+        outputText("\n" + headline + "\n");*/
 
         Automaton aut_heavy = copyAut(aut_i, true);
-        //printAut(aut_heavy);
         try
         {
-            //auto start = std::chrono::high_resolution_clock::now();
             aut_heavy = applyHeavy(aut_heavy, sDict, la_dw, la_up/*, timeout*/);
-            //auto elapsed = std::chrono::high_resolution_clock::now() - start;
-           // float seconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count()
-              //      / (float) 1000000;
 
             float q_red          =  measureStatesReduction(aut_heavy, aut_i);
             float delta_red      =  measureTransitionsReduction(aut_heavy, aut_i);
@@ -623,10 +617,10 @@ void simple_Heavy_tester(unsigned int la_dw, unsigned int la_up, string dir/*, i
             string delta_red_str      =  std::to_string(delta_red);
             string transDens_red_str  =  std::to_string(transDens_red);
 
-            outputText("  The resulting automaton has "
+            /*outputText("  The resulting automaton has "
                        + q_red_str + "% of its states, "
                        + delta_red_str + "% of its transitions and "
-                       + transDens_red_str + "% of its transition density. \n");
+                       + transDens_red_str + "% of its transition density. \n");*/
 
         }
         catch (timeout_& e)
@@ -648,24 +642,23 @@ void simple_Heavy_tester(unsigned int la_dw, unsigned int la_up, string dir/*, i
         // create the serializer for the Timbuk format
         VATA::Serialization::AbstrSerializer* serializer =
                 new VATA::Serialization::TimbukSerializer();
-        //printAut(aut_heavy);
         aut_heavy = removeInitialState(aut_heavy);
         // dump the automaton
         string new_filename = appendTimbukFilename(filenames.at(i),
                              "_minimized_with_Heavy(" + std::to_string(la_dw) + ","
                                                    + std::to_string(la_up) + ")");
-        //printAut(aut_heavy);
 
-        printAut(aut_heavy, &sDict);
+        if (!(equiv(aut_i,aut_heavy)) || !(equiv(aut_heavy,aut_i)))
+            exit_with_error("error");
 
-        writeToFile(new_filename, aut_heavy.DumpToString(*serializer), true);
+        //std::cout << autToStringTimbuk(aut_heavy, &sDict) << std::endl;
+        writeToFile(new_filename, autToStringTimbuk(aut_heavy), true);
 
     }
 
     printSummary_simple_heavy_tester(la_dw, la_up, metaData, testData_heavy, timeout_heavy);
 
 }
-
 
 void procedure1_tester(vector<string> dir = {},
                        string summarized_results_filename = "", string log_humanread_filename = "")
