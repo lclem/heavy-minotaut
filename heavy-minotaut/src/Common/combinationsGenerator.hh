@@ -1,31 +1,30 @@
 
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Header file of a class for generating all possible combinations of          *
+ *  transitions from a set of states. It works as an auxiliary class for the        *
+ *  computation of the extension of an attack during a simulation computation.      *
+ *  Currently not being needed.                                                     *
+ * 																					*
+ ************************************************************************************/
+
 #ifndef _COMBINATIONSGENERATOR_HH_
 #define _COMBINATIONSGENERATOR_HH_
 
-/*
- * A Class for generating all possible combinations of transitions from a set of states.
- * It functions as an auxiliary class for the computation of the extension of an attack during a
- * simulation computation.
- * - Currently not being used. (?)
-*/
 
-#include <vata/explicit_tree_aut.hh>	/* The internal automata representation from libvata */
 #include "automatonHelper.hh"
 #include "simulationHelper.hh"
 #include "common.hh"
 #include "debugging.hh"
 #include "common.hh"
 
-/*using namespace std;
-using std::vector;
-
-typedef VATA::ExplicitTreeAut Automaton;
-using state = Automaton::StateType;
-typedef std::string string;*/
 
 extern vector<vector<vector<MaybeTransition> > > allCombs;
-
-//static int NONE = -1;
 
 class Tree
 {

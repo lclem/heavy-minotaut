@@ -1,5 +1,18 @@
 
-//#include <vata/serialization/timbuk_serializer.hh>
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Implementation file defining a collection of functions that perform tests   *
+ *  to minimization techniques based on the computation of both lookahead downward  *
+ *  simulation and lookahead upward simulation. At the end of each minimization, a  *
+ *  consistency check is performed (a check that the language has been preserved).  *
+ * 																					*
+ ************************************************************************************/
+
 #include "minimizationTechniques_tester.hh"
 
 // A static global variable has its access restricted to the scope of the file.
@@ -11,251 +24,9 @@ static vector<string> DIRS = {
                            //  "test automata//forester_redblack_timbuk//33559760//",
                            //  "test automata//forester_redblack_timbuk//33578272//",
                            //  "test automata//forester_redblack_timbuk//33636192//",
-                           // "test automata//artmc_timbuk//",
-                           // "test automata//yun_yun_mata//"
+                           // "test automata//artmc_timbuk//"
                            };
 
-//static vector<const char*>DIRS = {"test automata//debugging_tests//"};
-//static vector<const char*>DIRS = {"test automata//small automata//dead states//"};
-
-static void printSummary_minimizationSequence(unsigned int numb_failures, unsigned int NUMB_TESTS,
-                                              unsigned int la_dw, unsigned int la_up,
-                                              Success* success, Reduction* reduction, Timeout* timeout) {
-    std::cout << "\nSummary: I tried to apply the following Procedure to a total of " << NUMB_TESTS << " automata: \n"
-              << " 1 - computation of dw-" << la_dw << " sim + quotienting with it; \n"
-              << " 2 - pruning with P(id, strict dw-la sim); \n"
-              << " 3 - computation of up-" << la_up << "(id) sim + quotienting with it; \n"
-              << " 4 - computation of strict up-1(id) sim + pruning with P(strict up-1(id) sim, dw-" << la_dw << " sim); \n"
-              //<< " 4.5 - computing the (maximal) dw-" << la << " sim again; \n"
-              << " 5 - repetition of step 1; \n"
-              << " 6 - computation of dw-1 sim and of up-" << la_up << "(dw-1 sim) sim + pruning with P(up-"
-              << la_up << "(dw-1 sim) sim), strict dw-1 sim); \n"
-
-              << "For " << timeout->total << " (" << ((float) timeout->total / (float) NUMB_TESTS)*100
-              << "%) of those automata, the Procedure was aborted due to a 'timeout' (" << TIMEOUT/60 << "min) "
-              << "in the computation of one of the relations. ";
-
-    if (numb_failures == 0)
-        std::cout << "In all of the other " << success->total << " (" << ((float) success->total / (float) NUMB_TESTS)*100
-                  << "%) tests, the Procedure was successful, i.e., the Reduction (effective or not) preserved the language.\n";
-    else
-        std::cout << "In " << numb_failures << "(" << ((float) numb_failures / (float) NUMB_TESTS)*100
-                  << "%) of the tests, the Reduction did NOT preserve the language.\n";
-    std::cout << "The following results are relative to the automata for which the Reduction methods successfully preserved the language:\n"
-
-              << " - prior to any Reduction, the automata had, on average, " << success->initial_avg_q << " states, "
-              << success->initial_avg_delta << " transitions, " << success->initial_avg_sigma << " symbols, average rank per symbol of "
-              << success->initial_avg_ranking << " and transition density of " << success->initial_avg_dens << ". "
-              << success->initial_greatest_q << ", " << success->initial_greatest_delta << ", " << success->initial_greatest_sigma << ", "
-              << success->initial_greatest_ranking << " and " << success->initial_greatest_dens
-              << " were the greatest number of states, number of transitions, number of symbols, average rank per symbol and transition density observed;\n"
-
-              << " - the dw-" << la_dw << " sim computed contained, on average, "
-              << success->avg_sizes_relations[DW_LA_1ST_TIME]
-              << " pairs of states (including pairs with the special initial state ψ)"
-              << " and took " << success->avg_numbs_refinements[DW_LA_1ST_TIME]
-              << " refinements and " << success->avg_times_relations[DW_LA_1ST_TIME]
-              << " seconds to compute. \n"
-
-              << " - the quotienting with dw-la sim took, on average, "
-              << success->avg_times_quotientings[QUOT_WITH_DW_LA] << " sec. \n"
-
-              << " - the pruning with P(id, dw-la sim.) took "
-              << success->avg_times_prunings[PRUN_WITH_P_ID_AND_DW_LA] << " sec. \n"
-
-              << " - the up-" << la_up << "(id) sim computed the first time contained, on average, "
-              << success->avg_sizes_relations[UP_LA_WITH_ID_1ST_TIME]
-              << " pairs of states and took "
-              << success->avg_numbs_refinements[UP_LA_WITH_ID_1ST_TIME]
-              << " refinements and " << success->avg_times_relations[UP_LA_WITH_ID_1ST_TIME]
-              << " seconds to compute. \n"
-
-              << " - the first quotienting with up-la(id) took "
-              << success->avg_times_quotientings[QUOT_WITH_UP_LA_WITH_ID_1ST] << " sec. \n"
-
-              << " - the strict up-1(id) sim contained, on average, "
-              << success->avg_sizes_relations[STRICT_UP_1_WITH_ID] << " pairs of states"
-              << " and took " << success->avg_numbs_refinements[STRICT_UP_1_WITH_ID]
-              << " refinements and " << success->avg_times_relations[STRICT_UP_1_WITH_ID]
-              << " seconds to compute. \n"
-
-              << " - the pruning with P(up-1(id), dw-la) took "
-              << success->avg_times_prunings[PRUN_WITH_P_UP_1_WITH_ID_AND_DW_LA] << " sec. \n"
-
-//              << " - the dw-" << la << " sim computed the second time contained, on average, "
-//              << success->avg_sizes_relations[DW_LA_2ND_TIME]
-//              << " pairs of states (including pairs with the special initial state ψ)"
-//              << " and took " << success->avg_numbs_refinements[DW_LA_2ND_TIME]
-//              << " refinements and " << success->avg_times_relations[DW_LA_2ND_TIME]
-//              << " seconds to compute. \n"
-
-              << " - the second quotienting with up-la(id) took "
-              << success->avg_times_quotientings[QUOT_WITH_UP_LA_WITH_ID_2ND] << " sec. \n"
-
-              << " - the dw-1 sim contained, on average, " << success->avg_sizes_relations[DW_1]
-              << " pairs of states and took " << success->avg_numbs_refinements[DW_1]
-              << " refinements and " << success->avg_times_relations[DW_1]
-              << " seconds to compute. \n"
-
-              << " - the computed up-" << la_up << "(dw-1 sim) sim contained, on average, "
-              << success->avg_sizes_relations[UP_LA_WITH_DW_1] << " pairs of states"
-              << " and took " << success->avg_numbs_refinements[UP_LA_WITH_DW_1]
-              << " refinements and " << success->avg_times_relations[UP_LA_WITH_DW_1]
-              << " seconds to compute.\n"
-
-              << " - the pruning with P(up-la(dw-1), strict dw-1) took "
-              << success->avg_times_prunings[PRUN_WITH_P_UP_LA_WITH_DW_1_AND_DW_1] << " sec. \n"
-
-                 /*
-              << " The up-" << la << "(id) sim computed the 2nd time contained, on average, " << success->avg_sizes_relations[UP_LA_WITH_ID_2ND_TIME] << " pairs of states"
-              << " and took " << success->avg_numbs_refinements[UP_LA_WITH_ID_2ND_TIME] << " refinements and " << success->avg_times_relations[UP_LA_WITH_ID_2ND_TIME] << " seconds to compute."*/
-
-              << " - the consistency check took " << success->avg_time_consCheck << " sec.\n"
-
-              << " - " << ((float)reduction->total / (float)success->total) * (float)100 << "% "
-              << "of the automata effectively became smaller (smaller number of states or smaller number of transitions) after applying the Reduction methods;\n"
-
-              << " - on those automata that effectively became smaller, on average, the number of states at the end of the reduction was "
-              << reduction->avg_q_reduction << "% and the number of transitions was "
-              << reduction->avg_delta_reduction << "%; \n"
-              << " - the most significant reduction in terms of number of states happened for an automaton whose number of states was reduced to "
-              << reduction->greatest_q_reduction << "%;\n"
-              << " - the most significant reduction in terms of number of transitions happened for an automaton whose number of transitions was reduced to "
-              << reduction->greatest_delta_reduction << "%;\n";
-
-    if (timeout->total > 0)
-              std::cout << "Additional data: The smallest number of states in an automaton that generated a 'timeout' was of "
-              << timeout->smallest_q << ", the smallest number of transitions was "
-              << timeout->smallest_delta
-              << " and the smallest transition density was " << timeout->smallest_dens << "\n";
-
-    delete success;
-    delete reduction;
-    delete timeout;
-}
-
-static void printSummary_testData(/*unsigned int NUMB_TESTS,*/ unsigned int la_dw,
-                                  unsigned int la_up, TestData* testData, Timeout* timeout) {
-
-    std::cout << "\nThe following results are relative to the minimization sequence consisting of: \n"
-              << " 1 - computation of dw-" << la_dw << " sim + quotienting with it; \n"
-              << " 2 - pruning with P(id, strict dw-la sim); \n"
-              << " 3 - computation of up-" << la_up << "(id) sim + quotienting with it; \n"
-              << " 4 - computation of strict up-1(id) sim + pruning with P(strict up-1(id) sim, dw-" << la_dw << " sim); \n"
-              //<< " 4.5 - computing the (maximal) dw-" << la << " sim again; \n"
-              << " 5 - repetition of step 1; \n"
-              << " 6 - computation of dw-1 sim and of up-" << la_up << "(dw-1 sim) sim + pruning with P(up-"
-              << la_up << "(dw-1 sim) sim), strict dw-1 sim); \n"
-
-              << " - the dw-" << la_dw << " sim computed contained, on average, "
-              << testData->avg_sizes_relations[DW_LA_1ST_TIME]
-              << " pairs of states (including pairs with the special initial state ψ)"
-              << " and took " << testData->avg_numbs_refinements[DW_LA_1ST_TIME]
-              << " refinements and " << testData->avg_times_relations[DW_LA_1ST_TIME]
-              << " seconds to compute. \n"
-
-              << " - the quotienting with dw-la sim took, on average, "
-              << testData->avg_times_quotientings[QUOT_WITH_DW_LA] << " sec. \n"
-
-              << " - the pruning with P(id, dw-la sim.) took "
-              << testData->avg_times_prunings[PRUN_WITH_P_ID_AND_DW_LA] << " sec. \n"
-
-              << " - the up-" << la_up << "(id) sim computed the first time contained, on average, "
-              << testData->avg_sizes_relations[UP_LA_WITH_ID_1ST_TIME]
-              << " pairs of states and took "
-              << testData->avg_numbs_refinements[UP_LA_WITH_ID_1ST_TIME]
-              << " refinements and " << testData->avg_times_relations[UP_LA_WITH_ID_1ST_TIME]
-              << " seconds to compute. \n"
-
-              << " - the first quotienting with up-la(id) took "
-              << testData->avg_times_quotientings[QUOT_WITH_UP_LA_WITH_ID_1ST] << " sec. \n"
-
-              << " - the strict up-1(id) sim contained, on average, "
-              << testData->avg_sizes_relations[STRICT_UP_1_WITH_ID] << " pairs of states"
-              << " and took " << testData->avg_numbs_refinements[STRICT_UP_1_WITH_ID]
-              << " refinements and " << testData->avg_times_relations[STRICT_UP_1_WITH_ID]
-              << " seconds to compute. \n"
-
-              << " - the pruning with P(up-1(id), dw-la) took "
-              << testData->avg_times_prunings[PRUN_WITH_P_UP_1_WITH_ID_AND_DW_LA] << " sec. \n"
-
-//              << " - the dw-" << la << " sim computed the second time contained, on average, "
-//              << success->avg_sizes_relations[DW_LA_2ND_TIME]
-//              << " pairs of states (including pairs with the special initial state ψ)"
-//              << " and took " << success->avg_numbs_refinements[DW_LA_2ND_TIME]
-//              << " refinements and " << success->avg_times_relations[DW_LA_2ND_TIME]
-//              << " seconds to compute. \n"
-
-              << " - the second quotienting with up-la(id) took "
-              << testData->avg_times_quotientings[QUOT_WITH_UP_LA_WITH_ID_2ND] << " sec. \n"
-
-              << " - the dw-1 sim contained, on average, " << testData->avg_sizes_relations[DW_1]
-              << " pairs of states and took " << testData->avg_numbs_refinements[DW_1]
-              << " refinements and " << testData->avg_times_relations[DW_1]
-              << " seconds to compute. \n"
-
-              << " - the computed up-" << la_up << "(dw-1 sim) sim contained, on average, "
-              << testData->avg_sizes_relations[UP_LA_WITH_DW_1] << " pairs of states"
-              << " and took " << testData->avg_numbs_refinements[UP_LA_WITH_DW_1]
-              << " refinements and " << testData->avg_times_relations[UP_LA_WITH_DW_1]
-              << " seconds to compute.\n"
-
-              << " - the pruning with P(up-la(dw-1), strict dw-1) took "
-              << testData->avg_times_prunings[PRUN_WITH_P_UP_LA_WITH_DW_1_AND_DW_1] << " sec. \n"
-
-                 /*
-              << " The up-" << la << "(id) sim computed the 2nd time contained, on average, " << success->avg_sizes_relations[UP_LA_WITH_ID_2ND_TIME] << " pairs of states"
-              << " and took " << success->avg_numbs_refinements[UP_LA_WITH_ID_2ND_TIME] << " refinements and " << success->avg_times_relations[UP_LA_WITH_ID_2ND_TIME] << " seconds to compute."*/
-
-              << " - the consistency check took " << testData->avg_time_consCheck << " sec.\n"
-              << "There were a total of " << timeout->total << " timeouts.\n";
-
-    if (timeout->total > 0)
-              std::cout << "Additional data: The smallest number of states in an automaton that generated a 'timeout' was of "
-              << timeout->smallest_q << ", the smallest number of transitions was "
-              << timeout->smallest_delta
-              << " and the smallest transition density was " << timeout->smallest_dens << "\n";
-
-    delete testData;
-    delete timeout;
-}
-
-//static void printSummary_minimizationProcedure(unsigned int numb_failures, unsigned int NUMB_TESTS, unsigned int la_dw, unsigned int la_up,
-//                                              MetaData* metadata, Reduction* reduction) {
-
-//    if (numb_failures == 0)
-//        std::cout << "In all of the " << metadata->total << " (" << ((float) metadata->total / (float) NUMB_TESTS)*100
-//                  << "%) tests, the Procedure was successful, i.e., the Reduction (effective or not) preserved the language.\n";
-//    else
-//        std::cout << "In " << numb_failures << "(" << ((float) numb_failures / (float) NUMB_TESTS)*100
-//                  << "%) of the tests, the Reduction did NOT preserve the language.\n";
-//    std::cout << "The following results are relative to the automata for which the Reduction methods successfully preserved the language:\n"
-
-//              << " - prior to any Reduction, the automata had, on average, " << metadata->initial_avg_q << " states, "
-//              << metadata->initial_avg_delta << " transitions, " << metadata->initial_avg_sigma << " symbols, average rank per symbol of "
-//              << metadata->initial_avg_ranking << " and transition density of " << metadata->initial_avg_dens << ". "
-//              << metadata->initial_greatest_q << ", " << metadata->initial_greatest_delta << ", " << metadata->initial_greatest_sigma << ", "
-//              << metadata->initial_greatest_ranking << " and " << metadata->initial_greatest_dens
-//              << " were the greatest number of states, number of transitions, number of symbols, average rank per symbol and transition density observed;\n"
-
-//              << " - " << ((float)reduction->total / (float)metadata->total) * (float)100 << "% "
-//              << "of the automata effectively became smaller (smaller number of states or smaller number of transitions) after applying the Reduction methods;\n"
-
-//              << " - on those automata that effectively became smaller, on average, the number of states at the end of the reduction was "
-//              << reduction->avg_q_reduction << "% and the number of transitions was "
-//              << reduction->avg_delta_reduction << "% and the transition density was "
-//              << reduction->avg_transDens_reduction << "; \n"
-//              << " - the most significant reduction in terms of number of states happened for an automaton whose number of states was reduced to "
-//              << reduction->greatest_q_reduction << "%;\n"
-//              << " - the most significant reduction in terms of number of transitions happened for an automaton whose number of transitions was reduced to "
-//              << reduction->greatest_delta_reduction << "%;\n"
-//              << " - the most significant reduction in terms of transition density happened for an automaton whose number of transitions was reduced to "
-//              << reduction->greatest_transDens_reduction << "%;\n"
-//                 ;
-
-//    delete metadata;
-//    delete reduction;
-//}
 
 static void printSummary_procedure(unsigned int la_dw, unsigned int la_up, MetaData& metadata,
                                    TestData& testData_ru,     Timeout& timeout_ru,
@@ -384,10 +155,12 @@ static void printSummary_procedure(unsigned int la_dw, unsigned int la_up, MetaD
                      + " refinements and " + std::to_string(testData_heavy_rels.avg_times_relations[STRICT_UP_1_WITH_ID])
                      + " seconds to compute. \n"
                      + "    - the pruning with P(up-1(id), dw-" + std::to_string(la_dw) + ") took "
-                     + std::to_string(testData_heavy_rels.avg_times_prunings[PRUN_WITH_P_UP_1_WITH_ID_AND_DW_LA]) + " sec. \n"
+                     + std::to_string(testData_heavy_rels.avg_times_prunings[PRUN_WITH_P_UP_1_WITH_ID_AND_DW_LA])
+                     + " sec. \n"
                      + "    - the dw-" + std::to_string(la_dw) + " sim computed the second time contained, on average, "
                      + std::to_string(testData_heavy_rels.avg_sizes_relations[DW_LA_2ND_TIME])
-                     + " pairs of states and took " + std::to_string(testData_heavy_rels.avg_numbs_refinements[DW_LA_2ND_TIME])
+                     + " pairs of states and took "
+                     + std::to_string(testData_heavy_rels.avg_numbs_refinements[DW_LA_2ND_TIME])
                      + " refinements and " + std::to_string(testData_heavy_rels.avg_times_relations[DW_LA_2ND_TIME])
                      + " seconds to compute. \n"
                      + "    - the second quotienting with up-" + std::to_string(la_up) + "(id) took "
@@ -443,124 +216,11 @@ static void printSummary_simple_heavy_tester(unsigned int la_dw, unsigned int la
 
 }
 
-static void printSummaryConsistency(unsigned int numb_failures, unsigned int NUMB_TESTS, unsigned int la, Success* success, Reduction* reduction, Timeout* timeout) {
-    std::cout << "\nSummary: I tried to apply the following Procedure to a total of " << NUMB_TESTS << " automata: \n"
-              << " 1 - computation of dw-" << la << " sim + quotienting with it; \n"
-              << " 2 - pruning with P(id, strict dw-la sim); \n"
-              << " 3 - computation of up-" << la << "(id) sim + quotienting with it; \n"
-              << " 4 - computation of strict up-1(id) sim + pruning with P(strict up-1(id) sim, dw-" << la << " sim); \n"
-              //<< " 4.5 - computing the (maximal) dw-" << la << " sim again; \n"
-              << " 5 - repetition of step 1; \n"
-              << " 6 - computation of dw-1 sim and of up-" << la << "(dw-1 sim) sim + pruning with P(up-" << la << "(dw-1 sim) sim), strict dw-1 sim); \n"
-
-              << "For " << timeout->total << " (" << ((float) timeout->total / (float) NUMB_TESTS)*100
-              << "%) of those automata, the Procedure was aborted due to a 'timeout' (" << TIMEOUT/60 << "min) "
-              << "in the computation of one of the relations. ";
-
-    if (numb_failures == 0)
-        std::cout << "In all of the other " << success->total << " (" << ((float) success->total / (float) NUMB_TESTS)*100
-                  << "%) tests, the Procedure was successful, i.e., the Reduction (effective or not) preserved the language.\n";
-    else
-        std::cout << "In " << numb_failures << "(" << ((float) numb_failures / (float) NUMB_TESTS)*100
-                  << "%) of the tests, the Reduction did NOT preserve the language.\n";
-    std::cout << "The following results are relative to the automata for which the Reduction methods successfully preserved the language:\n"
-
-              << " - prior to any Reduction, the automata had, on average, " << success->initial_avg_q << " states, "
-              << success->initial_avg_delta << " transitions, " << success->initial_avg_sigma << " symbols, average rank per symbol of "
-              << success->initial_avg_ranking << " and transition density of " << success->initial_avg_dens << ". "
-              << success->initial_greatest_q << ", " << success->initial_greatest_delta << ", " << success->initial_greatest_sigma << ", "
-              << success->initial_greatest_ranking << " and " << success->initial_greatest_dens
-              << " were the greatest number of states, number of transitions, number of symbols, average rank per symbol and transition density observed;\n"
-
-              << " - the dw-" << la << " sim computed contained, on average, "
-              << success->avg_sizes_relations[DW_LA_1ST_TIME]
-              << " pairs of states (including pairs with the special initial state ψ)"
-              << " and took " << success->avg_numbs_refinements[DW_LA_1ST_TIME]
-              << " refinements and " << success->avg_times_relations[DW_LA_1ST_TIME]
-              << " seconds to compute. \n"
-
-              << " - the quotienting with dw-la sim took, on average, "
-              << success->avg_times_quotientings[QUOT_WITH_DW_LA] << " sec. \n"
-
-              << " - the pruning with P(id, dw-la sim.) took "
-              << success->avg_times_prunings[PRUN_WITH_P_ID_AND_DW_LA] << " sec. \n"
-
-              << " - the up-" << la << "(id) sim computed the first time contained, on average, "
-              << success->avg_sizes_relations[UP_LA_WITH_ID_1ST_TIME]
-              << " pairs of states and took "
-              << success->avg_numbs_refinements[UP_LA_WITH_ID_1ST_TIME]
-              << " refinements and " << success->avg_times_relations[UP_LA_WITH_ID_1ST_TIME]
-              << " seconds to compute. \n"
-
-              << " - the first quotienting with up-la(id) took "
-              << success->avg_times_quotientings[QUOT_WITH_UP_LA_WITH_ID_1ST] << " sec. \n"
-
-              << " - the strict up-1(id) sim contained, on average, "
-              << success->avg_sizes_relations[STRICT_UP_1_WITH_ID] << " pairs of states"
-              << " and took " << success->avg_numbs_refinements[STRICT_UP_1_WITH_ID]
-              << " refinements and " << success->avg_times_relations[STRICT_UP_1_WITH_ID]
-              << " seconds to compute. \n"
-
-              << " - the pruning with P(up-1(id), dw-la) took "
-              << success->avg_times_prunings[PRUN_WITH_P_UP_1_WITH_ID_AND_DW_LA] << " sec. \n"
-
-//              << " - the dw-" << la << " sim computed the second time contained, on average, "
-//              << success->avg_sizes_relations[DW_LA_2ND_TIME]
-//              << " pairs of states (including pairs with the special initial state ψ)"
-//              << " and took " << success->avg_numbs_refinements[DW_LA_2ND_TIME]
-//              << " refinements and " << success->avg_times_relations[DW_LA_2ND_TIME]
-//              << " seconds to compute. \n"
-
-              << " - the second quotienting with up-la(id) took "
-              << success->avg_times_quotientings[QUOT_WITH_UP_LA_WITH_ID_2ND] << " sec. \n"
-
-              << " - the dw-1 sim contained, on average, " << success->avg_sizes_relations[DW_1]
-              << " pairs of states and took " << success->avg_numbs_refinements[DW_1]
-              << " refinements and " << success->avg_times_relations[DW_1]
-              << " seconds to compute. \n"
-
-              << " - the computed up-" << la << "(dw-1 sim) sim contained, on average, "
-              << success->avg_sizes_relations[UP_LA_WITH_DW_1] << " pairs of states"
-              << " and took " << success->avg_numbs_refinements[UP_LA_WITH_DW_1]
-              << " refinements and " << success->avg_times_relations[UP_LA_WITH_DW_1]
-              << " seconds to compute.\n"
-
-              << " - the pruning with P(up-la(dw-1), strict dw-1) took "
-              << success->avg_times_prunings[PRUN_WITH_P_UP_LA_WITH_DW_1_AND_DW_1] << " sec. \n"
-
-                 /*
-              << " The up-" << la << "(id) sim computed the 2nd time contained, on average, " << success->avg_sizes_relations[UP_LA_WITH_ID_2ND_TIME] << " pairs of states"
-              << " and took " << success->avg_numbs_refinements[UP_LA_WITH_ID_2ND_TIME] << " refinements and " << success->avg_times_relations[UP_LA_WITH_ID_2ND_TIME] << " seconds to compute."*/
-
-              << " - the consistency check took " << success->avg_time_consCheck << " sec.\n"
-
-              << " - " << ((float)reduction->total / (float)success->total) * (float)100 << "% "
-              << "of the automata effectively became smaller (smaller number of states or smaller number of transitions) after applying the Reduction methods;\n"
-
-              << " - on those automata that effectively became smaller, on average, the number of states at the end of the reduction was "
-              << reduction->avg_q_reduction << "% and the number of transitions was "
-              << reduction->avg_delta_reduction << "%; \n"
-              << " - the most significant reduction in terms of number of states happened for an automaton whose number of states was reduced to "
-              << reduction->greatest_q_reduction << "%;\n"
-              << " - the most significant reduction in terms of number of transitions happened for an automaton whose number of transitions was reduced to "
-              << reduction->greatest_delta_reduction << "%;\n";
-
-    if (timeout->total > 0)
-              std::cout << "Additional data: The smallest number of states in an automaton that generated a 'timeout' was of "
-              << timeout->smallest_q << ", the smallest number of transitions was "
-              << timeout->smallest_delta
-              << " and the smallest transition density was " << timeout->smallest_dens << "\n";
-
-    delete success;
-    delete reduction;
-    delete timeout;
-}
-
-void simple_Heavy_tester(unsigned int la_dw, unsigned int la_up, string dir/*, int timeout*/)
+void simple_Heavy_tester(unsigned int la_dw, unsigned int la_up, string dir)
 {
-    MetaData metaData             =  MetaData();
-    TestData testData_heavy       =  TestData();
-    Timeout timeout_heavy         =  Timeout();
+    MetaData metaData        =  MetaData();
+    TestData testData_heavy  =  TestData();
+    Timeout timeout_heavy    =  Timeout();
 
     vector<filename> filenames = getAllFilenames(dir);
     const unsigned int NUMB_TESTS = filenames.size();
@@ -575,7 +235,6 @@ void simple_Heavy_tester(unsigned int la_dw, unsigned int la_up, string dir/*, i
         /* Parsing and taking data from the automaton. */
         stateDict sDict;
         Automaton aut_i = parseFromString(autStr, sDict, false, false);
-        //std::cout << autToStringTimbuk(aut_i, &sDict) << std::endl;
 
         if (getNumbTransitions(aut_i) == 0)
         {
@@ -596,14 +255,10 @@ void simple_Heavy_tester(unsigned int la_dw, unsigned int la_up, string dir/*, i
                                        measureTransOverlaps(aut_i));
 
         /* Applying Heavy(k,j). */
-        /*string headline = "Applying Heavy(" + std::to_string(la_dw) + ", "
-                + std::to_string(la_up) + ")...";
-        outputText("\n" + headline + "\n");*/
-
         Automaton aut_heavy = copyAut(aut_i, true);
         try
         {
-            aut_heavy = applyHeavy(aut_heavy, sDict, la_dw, la_up/*, timeout*/);
+            aut_heavy = applyHeavy(aut_heavy, la_dw, la_up);
 
             float q_red          =  measureStatesReduction(aut_heavy, aut_i);
             float delta_red      =  measureTransitionsReduction(aut_heavy, aut_i);
@@ -613,21 +268,12 @@ void simple_Heavy_tester(unsigned int la_dw, unsigned int la_up, string dir/*, i
             testData_heavy.checkGreatestReductions(q_red, delta_red, transDens_red);
             testData_heavy.updateReductionBuckets(q_red, delta_red, transDens_red);
 
-            string q_red_str          =  std::to_string(q_red);
-            string delta_red_str      =  std::to_string(delta_red);
-            string transDens_red_str  =  std::to_string(transDens_red);
-
-            /*outputText("  The resulting automaton has "
-                       + q_red_str + "% of its states, "
-                       + delta_red_str + "% of its transitions and "
-                       + transDens_red_str + "% of its transition density. \n");*/
-
         }
         catch (timeout_& e)
         {
             outputText("Timeout: Heavy took longer than "
                       + std::to_string( (float) TIMEOUT/60 )
-                       + " minutes and therefore was aborted. In terms of averages, for this case we will consider that no reduction has been achieved on this particular automaton. \n");
+                      + " minutes and therefore was aborted. In terms of averages, for this case we will consider that no reduction has been achieved on this particular automaton. \n");
             timeout_heavy.inc();
             timeout_heavy.checkSmallest(getNumbUsedStates(aut_i), getNumbTransitions(aut_i), getTransitionDensity(aut_i));
 
@@ -639,19 +285,12 @@ void simple_Heavy_tester(unsigned int la_dw, unsigned int la_up, string dir/*, i
 
         outputText("\n");
 
-        // create the serializer for the Timbuk format
-        VATA::Serialization::AbstrSerializer* serializer =
-                new VATA::Serialization::TimbukSerializer();
         aut_heavy = removeInitialState(aut_heavy);
         // dump the automaton
         string new_filename = appendTimbukFilename(filenames.at(i),
                              "_minimized_with_Heavy(" + std::to_string(la_dw) + ","
                                                    + std::to_string(la_up) + ")");
 
-        if (!(equiv(aut_i,aut_heavy)) || !(equiv(aut_heavy,aut_i)))
-            exit_with_error("error");
-
-        //std::cout << autToStringTimbuk(aut_heavy, &sDict) << std::endl;
         writeToFile(new_filename, autToStringTimbuk(aut_heavy), true);
 
     }
@@ -680,11 +319,6 @@ void procedure1_tester(vector<string> dir = {},
             "results/logs/log_machine_readable_of_procedure1_tester_" + localTime();
     string log_machread_heavy_1_1_times_filename =
             "results/logs/log_machine_readable_of_procedure1_tester_heavy_1_1_times " + localTime();
-
-    /*writeToFile(log_machread_filename,
-                "Using la-dw=" + std::to_string(la_dw) + " la-up=" + std::to_string(la_up) + "\n");
-    writeToFile(log_machread_heavy_1_1_times_filename,
-                "Using la-dw=" + std::to_string(la_dw) + " la-up=" + std::to_string(la_up) + "\n");*/
 
     writeToFile(log_machread_heavy_1_1_times_filename,
                 "Name \t\t\t\t\t\t #Q_i \t #Dt_i \t #Q_f \t #Dt_f \t Q reduc. (%) \t Dt reduc. (%) \t Times(s) \n");
@@ -745,13 +379,13 @@ void procedure1_tester(vector<string> dir = {},
 void procedure2_tester(vector<string> dir = {}, string summarized_results_filename="", string log_humanread_filename = "")
 {
 
-    MetaData metaData             =  MetaData();
-    TestData testData_ru          =  TestData();
-    Timeout timeout_ru            =  Timeout();
-    TestData testData_quot        =  TestData();
-    Timeout timeout_quot          =  Timeout();
-    TestData testData_qAndP       =  TestData();
-    Timeout timeout_qAndP         =  Timeout();
+    MetaData metaData               =  MetaData();
+    TestData testData_ru            =  TestData();
+    Timeout timeout_ru              =  Timeout();
+    TestData testData_quot          =  TestData();
+    Timeout timeout_quot            =  Timeout();
+    TestData testData_qAndP         =  TestData();
+    Timeout timeout_qAndP           =  Timeout();
     TestData testData_heavy11       =  TestData();
     TestData testData_heavy11_rels  =  TestData(numbRelations, numbQuotientings, numbPrunings);
     Timeout timeout_heavy11         =  Timeout();
@@ -829,13 +463,13 @@ void procedure2_tester(vector<string> dir = {}, string summarized_results_filena
 void procedure3_tester(vector<string> dir = {}, string summarized_results_filename="", string log_humanread_filename = "")
 {
 
-    MetaData metaData             =  MetaData();
-    TestData testData_ru          =  TestData();
-    Timeout timeout_ru            =  Timeout();
-    TestData testData_quot        =  TestData();
-    Timeout timeout_quot          =  Timeout();
-    TestData testData_qAndP       =  TestData();
-    Timeout timeout_qAndP         =  Timeout();
+    MetaData metaData               =  MetaData();
+    TestData testData_ru            =  TestData();
+    Timeout timeout_ru              =  Timeout();
+    TestData testData_quot          =  TestData();
+    Timeout timeout_quot            =  Timeout();
+    TestData testData_qAndP         =  TestData();
+    Timeout timeout_qAndP           =  Timeout();
     TestData testData_heavy11       =  TestData();
     TestData testData_heavy11_rels  =  TestData(numbRelations, numbQuotientings, numbPrunings);
     Timeout timeout_heavy11         =  Timeout();
@@ -852,18 +486,13 @@ void procedure3_tester(vector<string> dir = {}, string summarized_results_filena
     string log_machread_heavy_times_filename =
             "results/logs/log_machine_readable_of_procedure3_tester_times_" + localTime();
 
-    /*writeToFile(log_machread_filename,
-                "Using la-dw=" + std::to_string(la_dw) + " la-up=" + std::to_string(la_up) + "\n");
-    writeToFile(log_machread_heavy_1_1_times_filename,
-                "Using la-dw=" + std::to_string(la_dw) + " la-up=" + std::to_string(la_up) + "\n");*/
-
     writeToFile(log_machread_heavy_times_filename,
                 "Name \t\t\t\t\t\t #Q_i \t #Dt_i \t Q reduc. (Heavy(1,1)) (%) \t Dt reduc. (Heavy(1,1)) (%) \t Times(s) (Heavy(1,1)) \t Q reduc. (Heavy(2,4)) (%) \t Dt reduc. (Heavy(2,4)) (%) \t Times(s) (Heavy(2,4)) \t Q reduc. (Heavy(3,6)) (%) \t Dt reduc. (Heavy(3,6)) (%) \t Times(s) (Heavy(3,6)) \n");
 
     vector<filename> filenames = getAllFilenames(dir.empty() ? DIRS : dir);
     const unsigned int NUMB_TESTS = filenames.size();
 
-    for (unsigned int i=0; i</*NUMB_TESTS*/ 200 ; i++)
+    for (unsigned int i=0; i<NUMB_TESTS ; i++)
     {
         string header1 = "  Test " + std::to_string(i+1) + " - " + filenames.at(i) + ":\n";
         outputText(header1, log_humanread_filename);
@@ -933,8 +562,7 @@ void removeDeadStates_tester()
 
         /* Parsing and taking data from the automaton. */
         stateDict stateDict;
-        /*tuple<*/Automaton/*,unsigned int, unsigned int> parsing_tuple*/ aut = parseFromString(autStr,stateDict,false,false);
-        //Automaton aut = std::get<0>(parsing_tuple);
+        Automaton aut = parseFromString(autStr,stateDict,false,false);
         if (getNumbTransitions(aut) == 0)
         {
             std::cout << "This automaton has 0 transitions and so will be skipped." << std::endl;
@@ -951,7 +579,7 @@ void removeDeadStates_tester()
     }
 }
 
-void foo(unsigned int version, string dir)
+void call_procedure_tester(unsigned int version, string dir)
 {
     vector<string> subfolders = getAllSubfolders(dir);
 
@@ -974,12 +602,8 @@ void foo(unsigned int version, string dir)
 
 }
 
-
 void minimizationTechniques_tester() {
-    //CheckConsistency(3);
 
-    //procedure_tester(1, 1, {}, "");
-
-    foo(3, "test automata//random_tabakov_vardi_timbuk//samples of 200 TA each");
+    call_procedure_tester(3, "test automata//random_tabakov_vardi_timbuk//samples of 400 TA each with 0.1<=td<=0.9");
 
 }

@@ -1,7 +1,22 @@
 
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Implementation file for the transitions pruning procedure.                  *
+ * 																					*
+ ************************************************************************************/
+
 #include "pruning.hh"
 
-Automaton prune(Automaton& aut, const vector<vector<bool> >& rel1, const vector<vector<bool> >& rel2, const bool flag_strictness) {
+/* Departing states are compared using relation rel1 and children states are compared
+ * using rel2 (which may be strict or not, depending on the flag given). */
+Automaton prune(Automaton& aut, const vector<vector<bool> >& rel1,
+                const vector<vector<bool> >& rel2, const bool flag_strictness)
+{
     Automaton aut_p = copyAutWithoutTrans(aut);
 
     state parent1;
@@ -14,15 +29,11 @@ Automaton prune(Automaton& aut, const vector<vector<bool> >& rel1, const vector<
         parent1 = trans1.GetParent();
         symb = trans1.GetSymbol();
         children1 = trans1.GetChildren();
-        /*if (children1.empty())
-            children1 = {initialState};*/
 
         for (const lv_transition& trans2 : aut)
             if (symb == trans2.GetSymbol()) {
                 if (areInRel(parent1,trans2.GetParent(),rel1)) {
                     children2 = trans2.GetChildren();
-                    /*if (children2.empty())
-                        children2 = {initialState}; */
                     if (areInRelIter(children1, children2, rel2, flag_strictness)) {
                         /* Then trans2 is "better" than trans1, and so the latter will not
                         *  be in the pruned automaton. */

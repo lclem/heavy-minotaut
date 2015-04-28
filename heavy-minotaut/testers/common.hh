@@ -1,15 +1,23 @@
+
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Header file declaring auxiliary functions for the execution of              *
+ * experiments. It includes functions that list files and folders in the            *
+ * filesystem.                                                                      *
+ * 																					*
+ ************************************************************************************/
+
 #ifndef COMMON_H
 #define COMMON_H
 
 
 #include "../src/Common/common.hh"
-#include <vata/serialization/timbuk_serializer.hh>
-
 #include <dirent.h>
-
-//#include <boost/filesystem/operations.hpp>
-//#include <boost/filesystem/path.hpp>
-//#include <boost/filesystem.hpp>
 
 vector<filename> getAllFilenames(const vector<string>& dirs);
 vector<filename> getAllFilenames(const string dir);

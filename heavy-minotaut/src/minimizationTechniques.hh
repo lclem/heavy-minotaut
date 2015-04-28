@@ -1,3 +1,16 @@
+
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Header file declaring automata minimization procedures. It includes the     *
+ *  procedures introduced in the literature (see CONCUR'15 paper in README file).   *
+ * 																					*
+ ************************************************************************************/
+
 #ifndef UP_SIMULATION_TESTER_H
 #define UP_SIMULATION_TESTER_H
 
@@ -31,7 +44,7 @@ extern const unsigned int numbPrunings                        ;
 
 Automaton removeDeadStates(const Automaton& aut_i);
 
-Automaton applyHeavy(Automaton& aut_i, stateDict stateDict, unsigned int la_dw,
+Automaton applyHeavy(Automaton& aut_i, unsigned int la_dw,
                      unsigned int la_up,
                      TestData& testData = emptyTestData,
                      string log_humanread_filename = "");

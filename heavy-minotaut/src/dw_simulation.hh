@@ -1,16 +1,26 @@
 
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Header file for the computation of the lookahead downward simulation        *
+ *  (strict or non-strict). It also declares functions which call libvata's         *
+ *  ordinary simulation algorithm.                                                  *
+ * 																					*
+ ************************************************************************************/
+
 #ifndef _DW_SIMULATION_HH_
 #define _DW_SIMULATION_HH_
 
 #include "Common/exceptions.hh"
 #include "Common/automatonHelper.hh"
 #include "Common/simulationHelper.hh"
-#include "Common/combinationsGenerator.hh"  // needed?
 #include "step.hh"
 #include "Common/statisticalResults.hh"
 #include "Common/executionOptions.hh"
-
-#include <vata/explicit_tree_aut.hh>
 
 extern bool OPT_RESTART_REFINE_3;
 extern string filename_Gl;

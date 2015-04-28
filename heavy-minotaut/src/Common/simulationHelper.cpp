@@ -1,4 +1,16 @@
 
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Implementationfile for a collection of utility functions which aid in the   *
+ *  computation of a lookahead simulation, whether downwardly or upwardly.          *
+ * 																					*
+ ************************************************************************************/
+
 #include "simulationHelper.hh"
 #include <utility>
 
@@ -29,11 +41,14 @@ transition MaybeTransition::getTransition()
 
 typerank MaybeTransition::getRank(const vector<typerank>& ranks)
 {
-    if (this->isATrans) {
-        try {
+    if (this->isATrans)
+    {
+        try
+        {
             return ranks.at((this->trans).GetSymbol());
         }
-        catch (const std::out_of_range& oor) {
+        catch (const std::out_of_range& oor)
+        {
             std::cerr << "Out of Range error: " << oor.what()
                       << " when accessing the position " << (this->trans).GetSymbol()
                       << " of vector ranks.";
@@ -52,13 +67,6 @@ bool isSuccess(defence def)
         return true;
     else
         return false;
-   /*
-   if (OPT[THREE_VALUES_LOGIC] == ON && boost::get<unsigned int>(def) == success def == success)
-        return true;
-   if (OPT[THREE_VALUES_LOGIC] == OFF && boost::get<unsigned int>(def) == true de)
-        return true;
-   else
-        return false;*/
 }
 
 bool isStrongFail(defence def)
@@ -202,7 +210,7 @@ void extendAttack(vector<vector<Step*> >& steps, const unsigned int depth, vecto
     /* First get the row of steps corresponding to the leaves of the current attack */
     vector<Step*> row = steps.at(depth);        // returns a reference.
 		
-    for (unsigned int i=0; i < transitions.size(); i++) {   // I could be taking each transition by reference
+    for (unsigned int i=0; i < transitions.size(); i++) {
 		if (transitions.at(i).isATransition()) {
 			transition trans = transitions.at(i).getTransition();
             symbol s = trans.GetSymbol();
@@ -236,83 +244,6 @@ void extendAttack(vector<vector<Step*> >& steps, const unsigned int depth, vecto
 
 }
 
-/* String and IO functions */
-
-/*string vectorVectorMaybeTransitionsToString(vector<vector<MaybeTransition> > vec)
-{
-	string str;
-	
-	for (unsigned int i=0; i<vec.size(); i++){
-		vector<MaybeTransition> subvec = vec.at(i);
-		for (unsigned int j=0; j<subvec.size(); j++)
-			if (subvec.at(j).isATransition())
-				str += transitionToString(subvec.at(j).getTransition()) + ",";
-			else
-				str += "<no trans>,";
-		str += "\n";
-	}
-	
-	return str;
-}
-
-void printVectorVectorMaybeTransitions(vector<vector<MaybeTransition> > vec)
-{
-	std::cout << vectorVectorMaybeTransitionsToString(vec) << "\n";
-}*/
-
-/* Test Functions */
-
-state* createNStates(state* states, int n1, int n2, int n)
-{
-	string pref = std::to_string(n1) + std::to_string(n2);
-	string name;
-	
-	for(int i=1; i<=n; i++){
-		name = pref + std::to_string(i);
-		states[i-1] = std::stoi(name);
-	}
-	 
-	return states;
-}		
-
-/*
-void test_extendAttack(vector<vector<Step*> >& steps_matrix, unsigned int depth, int n)
-{
-	state* states = new state[n];
-	
-	if (depth < steps_matrix.capacity()-1){
-		vector<Step*> steps = steps_matrix.at(depth);
-		for (unsigned int i=0; i<steps.size(); i++)
-		{
-			states = createNStates(states,depth+1,i+1,n);
-			Step* step = steps.at(i);
-
-			int rank = getRank(n);
-			step->setSymbol(n,rank);
-			
-			if (steps_matrix.size()-1 < depth+1) 
-				steps_matrix.resize(steps_matrix.size()+1);
-			
-			for (int j=0; j<rank; j++)
-			{				
-				step->setChild(states[j],j);
-				
-				try {
-                   steps_matrix.at(depth+1).push_back(step->getChildAddr(j));
-				}
-				catch (const std::out_of_range& oor) {
-					std::cerr << "Out of Range error: " << oor.what();
-					exit_with_error(" when acessing steps_matrix.");
-				}
-			}
-		}
-		test_extendAttack(steps_matrix,depth+1,n);
-	}
-	else
-		std::cout << "The matrix has been updated to " << stepsMatrix2String(steps_matrix) << "\n";
-}
-*/
-
 void initializeW(const Automaton& aut, vector<vector<bool> >& W,
                  const unsigned int n, const bool strict)
 {
@@ -330,20 +261,10 @@ void initializeW(const Automaton& aut, vector<vector<bool> >& W,
                 W.at(p).at(q) = true;
         }
 
-//    for (unsigned int i=0; i<n; i++)
-//        for (unsigned int j=0; j<n; j++)
-//        {
-//            if (strict && i==j)
-//                W.at(i).at(j) = false;
-//            else
-//                W.at(i).at(j) = true;
-//        }
-			
 }
 
 /* Computes the transitive closure of a binary relation represented by the
- * boolean nxn matrix W. It uses Warshall's algorithm.
- * Returns a copy of W, so that the matrix before the transClosure call is still available. */
+ * boolean nxn matrix W. It uses Warshall's algorithm. */
 vector<vector<bool> > transClosure(vector<vector<bool> > W, const unsigned int n) {
     for (unsigned int p=0; p<n; p++)
         for (unsigned int q=0; q<n; q++)
@@ -356,7 +277,7 @@ vector<vector<bool> > transClosure(vector<vector<bool> > W, const unsigned int n
 }
 
 /* Computes the asymetric restriction of the transitive closure of W. */
-vector<vector<bool> > asymTransClosure(vector<vector<bool> >& W, const unsigned int n) {
+void asymTransClosure(vector<vector<bool> >& W, const unsigned int n) {
     vector<vector<bool> > W_trans = transClosure(W,n);
 
     for (unsigned int i=0; i<n; i++)
@@ -364,7 +285,6 @@ vector<vector<bool> > asymTransClosure(vector<vector<bool> >& W, const unsigned 
             if (W_trans.at(i).at(j) && W_trans.at(j).at(i))
                 W_trans.at(j).at(i) = false;
 
-    return W_trans;
 }
 
 /* Extracts the strict subrelation of R. The function keeps in R only
@@ -381,7 +301,8 @@ void extractStrictRelation(vector<vector<bool> >& R, const unsigned int n) {
 
 bool areInRel(const state p, const state q, const vector<vector<bool> >& W) {
 
-    try {
+    try
+    {
         return W.at(p).at(q);
     }
     catch (const std::out_of_range& oor) {
@@ -394,32 +315,7 @@ bool areInRel(const state p, const state q, const vector<vector<bool> >& W) {
     return W.at(p).at(q);
 }
 
-void printStateBinRelation(const stateDiscontBinaryRelation& binRel, const unsigned int numb_states, const stateDict& dict) {
-    /*std::cout << "{";
-
-    for (unsigned int p=0; p<binRel.size_; p++)
-        for (unsigned int q=0; q<binRel.size_; q++) {
-            if (binRel.get(p,q))
-                std::cout << "(" << translateState(dict,p) << "," << translateState(dict,q) << ") ";
-        }*/
-
-/*    bool placeComma = false;
-    for (auto firstStateToMappedPair : dict_)
-        {	// iterate over all pairs
-            for (auto secondStateToMappedPair : dict_)
-            {
-                if (this->get(firstStateToMappedPair.first, secondStateToMappedPair.first))
-                {	// if the pair is in the relation print
-                    str << (placeComma? ", " : "");
-                    str << "(" << firstStateToMappedPair.first << ", " <<
-                        secondStateToMappedPair.first << ")";
-                    placeComma = true;
-                }
-            }
-        }
-
-
-    std::cout << "}\n"; */
+void printStateBinRelation(const stateDiscontBinaryRelation& binRel) {
 
     std::cout << binRel << "\n";
 }
@@ -448,27 +344,6 @@ void convertBinaryRelToBoolMatrix(const Automaton& aut,
                 W.at(p).at(q) =
                         matrix.data_[binRel.getDict().TranslateFwd(p)*matrix.rowSize_+binRel.getDict().TranslateFwd(q)];
 
-    /*
-    vector<bool> column(numb_states,false);
-    vector<vector<bool> > matrix(numb_states,column);
-    unsigned int size = binRel.size();
-    for (unsigned int p=0; p<binRel.size(); p++)
-        for (unsigned int q=0; q<binRel.size(); q++)
-            if (binRel.get(p,q))
-                matrix[p][q] = true; */
-
-    /*for (auto firstStateToMappedPair : binRel.dict_)
-        {	// iterate over all pairs
-            for (auto secondStateToMappedPair : binRel.dict_)
-            {
-                if (this->get(firstStateToMappedPair.first, secondStateToMappedPair.first))
-                {	// if the pair is in the relation print
-                    matrix[firstStateToMappedPair.first][secondStateToMappedPair.first] = true;
-                }
-            }
-        }*/
-
-    //return matrix;
 }
 
 vector<transition> moveInitialTransitionsToBeginning(vector<transition>& vec) {
@@ -525,7 +400,7 @@ vector<transition> orderTransBySymbolsRankings(vector<transition>& vec, const ve
 
 /* This function checks that states1[i] W states2[i] is true for any i.
  * If so, states1 and states2 are in the relation W lifted to vectors of states.
- * In case flag_asym=true, it additionally requires that states1[i] != states2[i]
+ * In case flag_strict=true, it additionally requires that states1[i] != states2[i]
  * for at least one i. If it should be the case, then W lifted to vectors is strict. */
 bool areInRelIter(const vector<state>& states1, const vector<state>& states2, const vector<vector<bool> >& W, const bool flag_strict) {
     unsigned int n = states1.size();
@@ -581,8 +456,6 @@ unsigned int getSizeOfRel(const vector<vector<bool> >& W, const unsigned int n) 
 }
 
 vector<pair<transition,size_t> >& vectorVectorPairTransitionIntAt(vector<vector<pair<transition,size_t>> >& vector, const state i) {
-
-    //std::vector<pair<transition,size_t>> answer;
 
     try {
         return vector.at(i);

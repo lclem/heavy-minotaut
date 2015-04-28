@@ -1,4 +1,16 @@
 
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Header file containing definitions of all the exceptions used in this       *
+ *  project.                                                                        *
+ * 																					*
+ ************************************************************************************/
+
 #ifndef _EXCEPTIONS_HH_
 #define _EXCEPTIONS_HH_
 
@@ -6,11 +18,6 @@
 
 using namespace std;
 
-//extern static exception WHasChanged;
-
-enum Suit { Diamonds = 1, Hearts, Clubs, Spades };
-
-//extern static enum MY_ERRORS { ERR_NONE = 0, ERR_T1, ERR_T2 };
 
 struct autHasNoLeafRules : public exception
 {

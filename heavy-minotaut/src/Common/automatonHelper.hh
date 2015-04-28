@@ -1,4 +1,16 @@
 
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Header file for a collection of functions that aid in the manipulation      *
+ *  and analysis of automata.                                                       *
+ * 																					*
+ ************************************************************************************/
+
 #ifndef _AUTOMATONHELPER_HH_
 #define _AUTOMATONHELPER_HH_
 
@@ -10,7 +22,7 @@
 using Automaton                  =  VATA::ExplicitTreeAut;
 using stateSet                   =  std::unordered_set<unsigned int>;
 using Convert                    =  VATA::Util::Convert;
-using state                      =  long unsigned int; /*Automaton::StateType;*/	 	   /* Internal representation of states */
+using state                      =  long unsigned int;	 	   /* Internal representation of states */
 using stateDict                  =  VATA::AutBase::StateDict;
 using stateExt                   =  const std::basic_string<char>;   /* External representation of states */
 using stateToStateMap            =  std::unordered_map<state, state>;
@@ -19,7 +31,7 @@ using alphabet                   =  std::shared_ptr<Automaton::AbstractAlphabet>
 using abstrAlphabet              =  Automaton::AlphabetType;
 using onTheFlyAlphabet           =  Automaton::OnTheFlyAlphabet;
 using symbol                     =  unsigned int;                    /* Internal representation of alphavet symbols */
-using symbolExt                  =  Automaton::StringRank;	 	    /* External representation of symbols */
+using symbolExt                  =  Automaton::StringRank;	 	     /* External representation of symbols */
 using typerank                   =  unsigned int;                    /* A type for the rank of a symbol. */
 using lv_transition              =  Automaton::Transition;
 using transition                 =  lv_transition;
@@ -54,7 +66,6 @@ typerank* getRanks2(const Automaton &aut, const unsigned int n);
 symbolExt translateSymbol(const Automaton &, symbol);
 stateExt translateState(const Automaton &aut, const stateDict&, const state);
 vector<vector<pair<transition,size_t>> > obtainTransBotUp(const Automaton&, const unsigned int);
-//my_transitions obtainTrans(Automaton&, unsigned int);
 void setGreatestRank(const vector<typerank> &ranks);
 stateDiscontBinaryRelation computeLVDwSimulation(const Automaton &aut, const unsigned int numb_states);
 unsigned int getSizeLVStateBinRelation(stateDiscontBinaryRelation& binRel, const unsigned int numb_states);
@@ -65,11 +76,9 @@ vector<float> measureTransOverlaps(const Automaton& aut);
 state reindexStates(Automaton& aut);
 bool equiv(const Automaton &aut1, const Automaton &aut2);
 bool langIsEmpty(const Automaton& aut);
-//bool equiv_(Automaton aut1, Automaton aut2);
-string autToStringTimbuk(const Automaton& aut, stateDict* dict = NULL);
+string autToStringTimbuk(const Automaton& aut);
 void printAut(const Automaton &, stateDict * = NULL);
 void printAutData(const Automaton &aut, bool printTransOverlap = false);
-
 
 inline bool equalSize(const Automaton& aut_1, const Automaton& aut_2)
 {
@@ -77,11 +86,9 @@ inline bool equalSize(const Automaton& aut_1, const Automaton& aut_2)
           (getNumbTransitions(aut_1) == getNumbTransitions(aut_2));
 }
 
-
-/*extern state INITIAL_STATE;
-extern bool USING_INITIAL_STATE;*/
 extern typerank GREATEST_RANK;
 extern state NO_STATE;
 extern state NO_SYMBOL;
+
 
 #endif

@@ -1,8 +1,9 @@
+
 /************************************************************************************
- *					(insert a nice name for the library here)						*
- *  - a library for minimizing tree automata based on lookahead simulations -		*
- * 																					*
- * 		Copyright (c) 2014	Ricardo Almeida	(LFCS - University of Edinburgh)		*
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
  * 																					*
  *	Description:																	*
  * 		Header file for the class Step. The construction of a lookahead simulation	*
@@ -20,22 +21,19 @@
 #ifndef _STEP_HH_
 #define _STEP_HH_
 
-#include <vata/explicit_tree_aut.hh>	/* The internal automata representation from libvata. */
-//#include "Common/util.hh"
 #include "Common/debugging.hh"
 #include "Common/automatonHelper.hh"
 
 using namespace std;
 using std::vector;
-typedef /*unsigned long long int*/ string code;
+typedef string code;
 typedef string node_no;
 
 extern code CODE_DEL, CODE_DEL_POW;
 
 const static string code_delimiter;
-const static code EMPTY_CODE = "";      // 'static' so that the several imports of this header by other files does not originate the multiple definitions of the variable.
-
-// TODO: improvement - a flag that tells is a Step is a deadlock Step;
+const static code EMPTY_CODE = "";
+// 'static' so that the several imports of this header by other files does not originate the multiple definitions of the variable.
 
 class Step
 {
@@ -44,7 +42,7 @@ class Step
         node_no getNode();          // get the node number
         state getState() const;
         symbol getSymbol() const;
-        vector<Step> getNext() const;    // should be called getChildren() ?
+        vector<Step> getNext() const;
         vector<Step> &getChildren();
         Step* getChildAddr(int pos);
         Step &getParent();
@@ -75,21 +73,14 @@ class Step
         Step(state, symbol, typerank, const vector<state>&, bool);
         ~Step();
 
-        /*bool operator<(const Step& rstep)
-        {
-            return false;
-        }*/
-
     private:
-//        code generateCode();
-//        code generateHeadlessCode();
         node_no EMPTY_NODE = "";
         node_no node = EMPTY_NODE;
         code c = EMPTY_CODE;
         state p = NO_STATE;
         symbol s = NO_SYMBOL;
         vector<Step> next;
-        Step* parent = NULL;    /* Will this bring problems?! */
+        Step* parent = NULL;
         int index = NONE;           /* Only useful in up simulations: if parent!=NULL, index will be the    */
         bool firstStep = false;     /* position at which the current Step occurs in the children of parent. */
         /* 'firstStep' indicates if the current object is the root Step in the attack tree,
@@ -157,73 +148,6 @@ inline bool operator>(const Step& lstep, const Step& rstep){
     return !(lstep<rstep) && !(lstep==rstep);
 }
 
-/*inline code Step::generateCode()
-{*/
-    /*ostringstream oss;
-    oss << this->getState();
-    oss << this->getSymbol();
-
-    for (vector<Step>::iterator it = this->getChildren().begin(); it != this->getChildren().end(); it++)
-        oss << (*it).getCode();
-
-    istringstream iss(oss.str());
-    unsigned long int result;
-    iss >> result;
-
-    return result;*/
-
-    /*code result = this->getSymbol() + this->getState();
-    for (vector<Step>::iterator it = this->getChildren().begin(); it != this->getChildren().end(); it++)
-        result += (*it).getCode();*/
-
-    /*unsigned long int pow = 10;
-    code result = this->getState();
-
-    result = result * CODE_DEL_POW + CODE_DEL;
-
-    code symb = (long unsigned int) this->getSymbol();
-    while(symb >= pow)
-        pow *= 10;
-    result = result * pow + symb;
-
-    code code_i;
-    vector<Step>& children = this->getChildren();
-    for (Step& child : children)
-    {
-        result = result * CODE_DEL_POW + CODE_DEL;
-        pow = 10;
-        code_i = child.getCode();
-        while(code_i >= pow)
-            pow *= 10;
-        result = result * pow + code_i;
-    }
-
-    return result;*/
-
-
-   // code result, code_i;
-  //  result = (this->getState() << log2(this->getSymbol())) + this->getSymbol();
-  //  for (Step& s : this->getChildren())
-  //  {
-  //      code_i = s.getCode();
-  //      result = (result << log2(code_i)) + code_i;
-  //  }
-
-   // return result;
-
-    /*code result = this->getState(), code_i;
-    result = concatenateCodes(result, this->getSymbol());
-    for (Step& s : this->getChildren())
-    {
-        code_i = s.getCode();
-        result = concatenateCodes(result, code_i);
-    }
-
-    return result;*/
-
-
-/*}*/
-
 /* Returns the code of a step (its state concatenated with its symbol and concatenated
 * with the codes of each of its children). */
 inline code Step::getCode()  {
@@ -270,57 +194,10 @@ inline code Step::getSetCode()  {
 }
 
 
-// Similar to getCode(), but ignores the state of the first step. Useful in a case where all
-// codes will be stored in a structure according to that state.
-inline code Step::getHeadlessCode() {
-    /*ostringstream oss;
-    oss << this->getSymbol();
-
-    for (vector<Step>::iterator it = this->getChildren().begin(); it != this->getChildren().end(); it++)
-        oss << (*it).getCode();
-
-    istringstream iss(oss.str());
-    unsigned long int result;
-    iss >> result;
-
-    return result;*/
-
-    /*code result = (long unsigned int) this->getSymbol(), code_i;
-    unsigned long int pow = 10;
-    for (vector<Step>::iterator it = this->getChildren().begin(); it != this->getChildren().end(); it++) {
-        code_i = (*it).getCode();
-        while(code_i >= pow)
-            pow *= 10;
-        result = result * pow + code_i;
-        pow = 10;
-    }*/
-
-    /*code result = this->getSymbol(), code_i;
-    for (Step& s : this->getChildren())
-    {
-        code_i = s.getCode();
-        result = concatenateCodes(result, code_i);
-    }
-
-    return result;*/
-
-    /*unsigned long long int pow = 10;
-    code result = (long unsigned int) this->getSymbol();
-
-    code code_i;
-    vector<Step>& children = this->getChildren();
-    for (Step& child : children)
-    {
-        result = result * CODE_DEL_POW + CODE_DEL;
-        pow = 10;
-        code_i = child.getCode();
-        while(code_i >= pow)
-            pow *= 10;
-        result = result * pow + code_i;
-    }
-
-    return result;*/
-
+/* Similar to getCode(), but ignores the state of the first step. Useful in a case where all
+   codes will be stored in a structure according to that state.   */
+inline code Step::getHeadlessCode()
+{
     code result = std::to_string(this->getSymbol());
     vector<Step>& children = this->getChildren();
     for (Step& child : children)

@@ -1,3 +1,17 @@
+
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Header file containing declarations of global variables for some of the     *
+ *  execution options in this project. These include a flag indicating whether      *
+ *  3 Value Logic should be used or not, among others.                              *
+ * 																					*
+ ************************************************************************************/
+
 #ifndef EXECUTIONOPTIONS_HH
 #define EXECUTIONOPTIONS_HH
 

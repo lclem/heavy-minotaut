@@ -1,11 +1,25 @@
 
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Implementation file for the class Step. The construction of a lookahead     *
+ *  sim. on the states of a Bottom-Up Tree Automaton (BUTA) is based on verifying   *
+ *  if there is some attack from a state p against which a state q cannot defend.   *
+ *  An attack is a tree of transition rules with root at p.							*
+ * 	Each transition rule (<p1,p2,...,pn>,s,p) is here represented as 				*
+ * 	a Step(p,s,[Step c1,Step c2,...,Step cn]), where each Step ci represents the	*
+ * 	transition from pi considered in the attack. A leaf-rule (<>,s,p) 				*
+ * 	(i.e., a rule with no departing states) is represented as Step(p,s,[stepPsi]),	*
+ *  where stepPsi is the (unique) initial state of a BUTA made explicit.            *
+ * 																					*
+ ************************************************************************************/
+
 #include "step.hh"
 
-//code EMPTY_CODE = "";
-
-//code code_delimiter = (NO_STATE > NO_SYMBOL ? NO_STATE : NO_SYMBOL);
-//string code_delimiter = "a";
-//Step psiStep = Step(INITIAL_STATE);
 
 Step::Step() : next(0)
 {
@@ -59,7 +73,6 @@ Step::Step(state p, symbol s, typerank rank, const vector<state>& children, bool
 
 Step::~Step()
 {
-    //delete this->parent;        // Keep the delete instruction when the 'parent' pointer has been declared with the 'new' keyword.
     if (dbg) cout << "Object " << std::to_string(this->p) << " is being deleted" << endl;
 }
 
@@ -86,7 +99,6 @@ std::vector<Step> Step::getNext() const
     return this->next;
 }
 
-/* To be deleted later. */
 std::vector<Step>& Step::getChildren()
 {
     return this->next;
@@ -120,16 +132,6 @@ int Step::getIndex()
 
     return this->index;
 }
-
-/*static inline uint32_t log2(const uint32_t x) {
-  uint32_t y;
-  asm ( "\tbsr %1, %0\n"
-      : "=r"(y)
-      : "r" (x)
-  );
-  return y;
-}*/
-
 
 /* Sets the symbol of this step to 's' and sets next to an array of pointers to
  * steps for each of the states in 'states', and returns next. */
@@ -195,15 +197,7 @@ void Step::set(symbol s, typerank r, const vector<state>& children)
 {
     if (r==0)
     {
-        // but r will never be 0
         exit_with_error("Step->set received r=0");
-
-        /*if (!children.empty())
-            exit_with_error("I tried to create a Step with a symbol ranked at 0 but with a non-empty vector of children");
-        else {
-            this->s = s;
-            this->next = {psiStep};
-        }*/
     }
     else {
         this->setSymbol(s, r);
@@ -225,7 +219,7 @@ bool Step::isALeafStep()    /* Applicable in a dw simulation context. */
     return (this->next).capacity() == 0;
 }
 
-bool Step::isLastStep()     //Applicable in an up simulation context.
+bool Step::isLastStep()     /* Applicable in a up simulation context. */
 {
     return (this->parent) == NULL;
 }
@@ -273,7 +267,6 @@ Step& firstStepOf(vector<vector<Step*> >& matrix) {
         exit_with_error(" when acessing matrix.");
     }
 
-    //Step* step;
     try {
         return *(row.at(0));
     }
@@ -295,7 +288,8 @@ state firstStateOf(vector<vector<Step*> >& matrix) {
 
 Step& vectorStepsAt(vector<Step>& vec, const unsigned int pos, const char* strct_name){
 
-    try {
+    try
+    {
         return vec.at(pos);
     }
     catch (const std::out_of_range& oor) {
@@ -336,28 +330,3 @@ vector<Step*>& vectorVectorStepPtrsAt(vector<vector<Step*> >& vec, const unsigne
 
     return vec.at(0);       // Just to make the compiler happy.
 }
-
-
-static inline uint32_t log2(const uint32_t x) {
-  uint32_t y;
-  asm ( "\tbsr %1, %0\n"
-      : "=r"(y)
-      : "r" (x)
-  );
-  return y;
-}
-
-/*code concatenateCodes(code x, code y) {
-    int shift = log2(y);
-    code z = (x << log2(y)) + y;
-    return z;
-}*/
-
-//
-// This definition is necessary for the sorting done by std::set<Step>.
-//bool operator<(const Step& lstep, const Step& rstep){ /*if (rstep.getState() > lstep.getState())*/ return false;}
-
-/*bool operator<(const Step& lstep, const Step& rstep)
-{
-    return false;
-}*/

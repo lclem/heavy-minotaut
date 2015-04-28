@@ -1,4 +1,16 @@
 
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Implementation file for a collection of definitions and functions which     *
+ *  are of general utility, with no particular scope.                               *
+ * 																					*
+ ************************************************************************************/
+
 #include "common.hh"
 
 void exit_with_error(const char* msg)
@@ -74,7 +86,6 @@ void writeToFile(string filename, string text, bool overwrite)
     // std::ios::app is the open mode "append" meaning
     // new data will be written to the end of the file.
     out.open(filename, overwrite ? std::ios::trunc : std::ios::app);
-    //std::string str = "I am here.";
     out << text;
 
     //std::ofstream out(filename);
@@ -92,5 +103,3 @@ void outputText(string text, string filename)
         writeToFile(filename, text);
 
 }
-
-

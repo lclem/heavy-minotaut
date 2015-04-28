@@ -1,12 +1,23 @@
 
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Header file for a collection of utility functions which aid in the          *
+ *  computation of a lookahead simulation, whether downwardly or upwardly.          *
+ * 																					*
+ ************************************************************************************/
+
 #ifndef _SIMULATIONHELPER_HH_
 #define _SIMULATIONHELPER_HH_
 
 
-// #include <type_traits>      // conditional typedefs use this
 #include <boost/variant/variant.hpp>
 #include <boost/variant/get.hpp>
-#include <vata/explicit_tree_aut.hh>	/* The internal automata representation from libvata */
+//#include <vata/explicit_tree_aut.hh>	/* The internal automata representation from libvata */
 
 #include "../Common/common.hh"
 #include "../Common/executionOptions.hh"
@@ -28,7 +39,7 @@ class MaybeTransition
 		bool isATrans = false;
 };
 
-typedef /*boost::variant< bool, unsigned int >*/ unsigned int defence;
+typedef unsigned int defence;
 
 /* A variant type-definition for defence, and two alternative 'get' classes for this type.
  * Not currently being used. */
@@ -67,8 +78,6 @@ typedef std::conditional<areMapsOrdered,
                          map<code,defence>,
                          unordered_map<code,defence>>::type codes_map;
 
-/*typedef unordered_map<node_no,defence> nodes_map;
-typedef unordered_map<code,   defence> codes_map;*/
 
 extern defence success, fail, strong_fail, weak_fail;
 
@@ -81,13 +90,13 @@ bool isWorse(defence def1, defence def2);
 
 transitions mapGetTrans(const Automaton &, const vector<Step *> &);
 vector<state> mapGetState(vector<Step> &);
-void /*code*/ extendAttack(vector<vector<Step*> >& steps, /*const code atk_code,*/ const unsigned int depth, vector<MaybeTransition>& transitions, const vector<typerank>& ranks);
+void extendAttack(vector<vector<Step*> >& steps, const unsigned int depth, vector<MaybeTransition>& transitions, const vector<typerank>& ranks);
 
 void printVectorVectorMaybeTransitions(const vector<vector<MaybeTransition> >&);
 typerank getRank(const symbol);
 void initializeW(const Automaton &aut, vector<vector<bool> >& W, const unsigned int n, const bool strict=false);
 vector<vector<bool> > transClosure(vector<vector<bool> >, const unsigned int);
-vector<vector<bool> > asymTransClosure(vector<vector<bool> >&, const unsigned int);
+void asymTransClosure(vector<vector<bool> >&, const unsigned int);
 void extractStrictRelation(vector<vector<bool> >&, const unsigned int);
 bool areInRel(state, state, const vector<vector<bool> >&);
 bool areInRelIter(const vector<state>&, const vector<state>&, const vector<vector<bool> >&, const bool);
@@ -99,11 +108,8 @@ vector<pair<transition, size_t> > &vectorVectorPairTransitionIntAt(vector<vector
 void convertBinaryRelToBoolMatrix(const Automaton &aut, const stateDiscontBinaryRelation &binRel, vector<vector<bool> > &W);
 string w2String(const Automaton &aut, const vector<vector<bool> >&, const unsigned int numb_states, const stateDict* dict = NULL);
 void printW(const Automaton &aut, const vector<vector<bool> >&, const unsigned int, const stateDict* = NULL);
-void printStateBinRelation(const stateDiscontBinaryRelation& binRel, const unsigned int numb_states, const stateDict& dict);
+void printStateBinRelation(const stateDiscontBinaryRelation& binRel);
 void printAttack(const Automaton& aut, Step& step);
 
-/* Test functions */
-//vector<vector<Step*> >* initializeStepsMatrix(vector<vector<Step*> >& steps_matrix, int la, Step* first);
-//void test_extendAttack(vector<vector<Step*> >& steps_matrix, unsigned int depth, int n);
 
 #endif

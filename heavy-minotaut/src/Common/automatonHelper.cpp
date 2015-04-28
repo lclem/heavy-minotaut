@@ -1,27 +1,29 @@
 
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Implementation of a collection of functions that aid in the manipulation    *
+ *  and analysis of automata.                                                       *
+ * 																					*
+ ************************************************************************************/
+
 #include "automatonHelper.hh"
 
 state NO_STATE;
 state NO_SYMBOL;
-//state INITIAL_STATE;
-//bool USING_INITIAL_STATE = false;
 typerank GREATEST_RANK;
 
 Automaton addInitialState(const Automaton& old_aut)
 {
-    //if (USING_INITIAL_STATE)
-      //  return old_aut;
-
     Automaton new_aut = copyAutWithoutTrans(old_aut);
 
     vector<state> children;
     bool hasLeafRules = false;
     state initialState = getGreatestUsedState(old_aut)+1;
-
-    /* INITIAL_STATE = numb_states;     Warning: this makes the initial state be equal to the number of states in the automaton, which
-                                       is a value that can be taken by another state. However, since the states are indexed continuously from 0
-                                        during the parsing step, this will only happen if some state has been deleted in the meantime. This is done
-                                        when we remove dead states, quotient states, etc. */
 
     for (const lv_transition& trans : old_aut) {
         if (!trans.GetChildren().empty())
@@ -29,8 +31,7 @@ Automaton addInitialState(const Automaton& old_aut)
         else
         {
             hasLeafRules = true;
-            //USING_INITIAL_STATE = true;
-            children = {/*INITIAL_STATE*/ initialState};
+            children = {initialState};
             new_aut.AddTransition(children, trans.GetSymbol(), trans.GetParent());
         }
     }
@@ -39,7 +40,6 @@ Automaton addInitialState(const Automaton& old_aut)
     {
         Automaton empty;
         return empty;
-      //  throw autHasNoLeafRules();
     }
 
     return new_aut;
@@ -47,16 +47,13 @@ Automaton addInitialState(const Automaton& old_aut)
 
 Automaton removeInitialState(const Automaton& old_aut)
 {
-  //  if (!USING_INITIAL_STATE)
-    //    return old_aut;
-
     state initialState = getInitialState(old_aut);
     // This assumes that the explicit initial state has been added to the automaton,
     // which necessarily happens except when the input automaton had no leaf-rules
     // (in such a case, discarding the automaton is advisable).
 
     Automaton new_aut = copyAutWithoutTrans(old_aut);
-    vector<state> empty_children(0), children, initial_state_children = {/*INITIAL_STATE*/ initialState};
+    vector<state> empty_children(0), children, initial_state_children = {initialState};
 
     for (const lv_transition& trans : old_aut)
     {
@@ -66,8 +63,6 @@ Automaton removeInitialState(const Automaton& old_aut)
         else
             new_aut.AddTransition(children, trans.GetSymbol(), trans.GetParent());
     }
-
-    //USING_INITIAL_STATE = false;
 
     return new_aut;
 }
@@ -98,30 +93,17 @@ Automaton parseFromString(string autStr, stateDict& stateDict, bool flag_removeU
     aut.SetAlphabet(onTheFlyAlph);
     aut.LoadFromString(*parser, autStr, stateDict);
 
-//    try
-//    {
-        aut = addInitialState(aut);
-//    }
-//    catch (autHasNoLeafRules& e)
-//    {
-//        Automaton empty;
-//        std::cout << "The given automaton has no leaf-rules so the empty automaton will be returned instead. \n";
-//        return std::make_tuple(empty, 0, 0);
-//    }
+    aut = addInitialState(aut);
 
     if (flag_removeUseless)
-        aut = aut.RemoveUselessStates();  //Warning: there is the assumption that final states are never useless, so this never deletes them
+        aut = aut.RemoveUselessStates();  // Warning: there is the assumption that final states are never useless, so this never deletes them
     if (flag_removeUnreachable)
         aut = aut.RemoveUnreachableStates();
 
-    //printAut(aut);
+    NO_STATE = getGreatestUsedState(aut)+1;
+    NO_SYMBOL = getGreatestUsedSymbol(aut)+1;
 
-    //unsigned int numb_states = getNumbUsedStates(aut);  /* Number of used states including the initial state (if it has been added). */
-    NO_STATE = /*numb_states+1;*/ getGreatestUsedState(aut)+1;
-    //unsigned int numb_symbols = getNumbSymbols(aut) /*getGreatestUsedSymbol(aut)*/;
-    NO_SYMBOL = /*numb_symbols*/getGreatestUsedSymbol(aut)+1;
-
-    return /*std::make_tuple(*/aut/*, numb_states, numb_symbols)*/;
+    return aut;
 }
 
 vector<unsigned int> mapGetNumbTrans(const vector<vector<transition> >& vec) {
@@ -208,23 +190,6 @@ bool* getIsFinal2(const Automaton& aut, const unsigned int n) {
  * This function appears to not always work correctly. */
 unsigned int getNumbSymbols(const Automaton& aut)
 {
-    /*
-    // Get a pointer to the alphabet of type onTheFlyAlphabet which is being used already
-    // by 'aut'.
-    std::shared_ptr<onTheFlyAlphabet> alph;
-    if (!(alph = std::dynamic_pointer_cast<onTheFlyAlphabet>(aut.GetAlphabet())))
-    {	// The alphabet should be ExplicitTreeAut::onTheFlyAlphabet,
-        // if it isn't then throw 'false'.
-        assert(false);
-    }
-
-    int c = 0;
-    for (const auto stringSymbolPair : alph->GetSymbolDict())
-        c++;
-
-    return c;
-    */
-
     unordered_set<symbol> symb;
     for (const transition& trans : aut)
         symb.insert(trans.GetSymbol());
@@ -350,15 +315,7 @@ vector<vector<pair<transition,size_t>> > obtainTransBotUp(const Automaton& aut, 
         vector<state> children = trans.GetChildren();
         unsigned int size = children.size();
 
-       //transition trans_ = std::make_tuple(trans.GetChildren(),trans.GetSymbol(),trans.GetParent());
-
-
-                                       /*if (size==0) {
-                                          trans_botup.at(initialState).push_back(std::make_pair(trans_,0));
-                                                                      }*/
-
-
-       for (unsigned int i=0; i<size; i++)
+        for (unsigned int i=0; i<size; i++)
             trans_botup.at(children.at(i)).push_back(std::make_pair(trans,i));
 
     }
@@ -371,17 +328,10 @@ bool equiv(const Automaton& aut1, const Automaton& aut2)
     Automaton aut1_ = removeInitialState(aut1);
     Automaton aut2_ = removeInitialState(aut2);
 
-    //std::cout << "hello" << std::endl;
-    //printAut(aut1_);
-    //printAut(aut2_);
-
     bool result1 = true;
     result1 = VATA::ExplicitTreeAut::CheckInclusion(aut1_, aut2_);
     bool result2 = false;
     result2 = VATA::ExplicitTreeAut::CheckInclusion(aut2_, aut1_);
-
-    //aut1_ = addInitialState(aut1);
-    //aut2_ = addInitialState(aut2);
 
     return (result1 && result2);
 }
@@ -486,24 +436,6 @@ Automaton copyAutWithoutTrans(const Automaton& old_aut){
     return new_aut;
 }
 
-/*
-my_transitions obtainTrans(Automaton& aut, unsigned int numb_states) {
-    vector<tuple<vector<state>, symbol, state> > t;
-    vector<vector<tuple<vector<state>, symbol, state> > > my_transitions (numb_states,t);
-
-    tuple<vector<state>, symbol, state> my_transition;
-    for (unsigned int i=0; i<numb_states; i++) {
-        for (const lv_transition trans : aut[i]) {
-
-                my_transition = std::make_tuple(trans.GetChildren(), trans.GetSymbol(), i);
-            my_transitions.at(i).push_back(my_transition);
-        }
-    }
-
-    return my_transitions;
-}
-*/
-
 void setGreatestRank(const vector<typerank>& ranks) {
     GREATEST_RANK = *std::max_element(ranks.begin(),ranks.end());
 }
@@ -555,22 +487,8 @@ bool foo(const vector<state>& vec1, const vector<state>& vec2)
 */
 vector<float> measureTransOverlaps(const Automaton& aut)
 {
-    std::set<transition> transWhichOverlap;     // using a set forces that each transition shall be counted only once
+    std::set<transition> transWhichOverlap;     // Using a set forces that each transition shall be counted only once.
 
-//    for (Automaton::iterator it1=aut.begin(); it1!= aut.end(); ++it1)
-//    {
-//        bool shouldIinsertIt1 = false;
-//        for (Automaton::iterator it2=it1; it2!=it1 && it2!=aut.end(); ++it2)
-//        {
-//            if ((*it1).GetSymbol()==(*it2).GetSymbol() && statesIntersect((*it1).GetChildren(), (*it2).GetChildren()))
-//            {
-//                transWhichOverlap.insert(*it2);
-//                shouldIinsertIt1 = true;
-//            }
-//        }
-//        if (shouldIinsertIt1)
-//            transWhichOverlap.insert(*it1);
-//    }
     for (const transition& trans1 : aut)
     {
         for (const transition& trans2 : aut)
@@ -583,6 +501,7 @@ vector<float> measureTransOverlaps(const Automaton& aut)
             }
         }
     }
+
     unsigned int numb_transitions = getNumbTransitions(aut);
     float numb_transWhichOverlap = ((float) transWhichOverlap.size() / (float) numb_transitions) * (float) 100;
 
@@ -598,7 +517,6 @@ vector<float> measureTransOverlaps(const Automaton& aut)
             {
                 if (it2==it1)
                     continue;
-                //if ((*it1).GetSymbol()==(*it2).GetSymbol() && std::find((*it2).GetChildren().begin(), (*it2).GetChildren().end(), state) != (*it2).GetChildren().end())
                 if ((*it1).GetParent()==(*it2).GetParent() && (*it1).GetSymbol()==(*it2).GetSymbol() && (*it1).GetChildren().at(i)==(*it2).GetChildren().at(i))
                 {
                     c++;
@@ -629,7 +547,6 @@ vector<float> measureTransOverlaps(const Automaton& aut)
             {
                 if (it2==it1)
                     continue;
-                //if ((*it1).GetSymbol()==(*it2).GetSymbol() && std::find((*it2).GetChildren().begin(), (*it2).GetChildren().end(), state) != (*it2).GetChildren().end())
                 if ((*it1).GetParent()==(*it2).GetParent() && (*it1).GetSymbol()==(*it2).GetSymbol() && (*it1).GetChildren().at(i)==(*it2).GetChildren().at(i))
                 {
                     c++;
@@ -658,12 +575,12 @@ state reindexStates(Automaton& aut)
     stateToStateMap stateMap;
     stateToStateTranslWeak stateTrans(stateMap, [&stateCnt](const state&){return stateCnt++;});
 
-    Automaton tmpAut = aut/*.RemoveUselessStates()*/;
+    Automaton tmpAut = aut;
     aut = tmpAut.ReindexStates(stateTrans);
 
     aut = addInitialState(aut);
 
-    return /*USING_INITIAL_STATE ? stateCnt+1 : stateCnt*/ getNumbUsedStates(aut);
+    return getNumbUsedStates(aut);
 }
 
 /* Returns the value of numbStates(smaller) / numbStates(larger) in %. */
@@ -723,8 +640,7 @@ void printAut(const Automaton& aut, stateDict* dict) {
     std::cout << "Sigma contains " << getNumbSymbols(aut) << " symbols "
               << "and their average rank is " << getAvgRank(aut) << ".\n";
 
-
-      /* Print the alphabet  */
+    /* Print the alphabet  */
     /*
     // Get a pointer to the alphabet of type OnTheFlyAlphabet which is being used already
     // by 'aut'.
@@ -749,25 +665,7 @@ void printAut(const Automaton& aut, stateDict* dict) {
 
     std::cout << ":\n";
     for (const lv_transition& trans : aut)
-    {		/* // For each transition, print first its external representation ...
-                std::cout << "   " << translateSymbol(aut, trans.GetSymbol());
-
-                // Create a vector of type string called 'childrenStr' with the same size
-                // as the number of children in trans.
-                std::vector<std::string> childrenStr(trans.GetChildren().size());
-                // Now place each child in the vector and then perform an Haskell-like map
-                // on this vector to replace each state by its external representation.
-                std::transform(
-                    trans.GetChildren().cbegin(),
-                    trans.GetChildren().cend(),
-                    childrenStr.begin(),
-                    [&stateDict](const state s){return dict.TranslateBwd(s);}
-                );
-
-                std::cout << Convert::ToString(childrenStr);
-                std::cout << " -> " << translateState(dict, trans.GetParent()); */
-
-                // ... and then its internal one.
+    {
         std::cout << "    [parent state = " << trans.GetParent();
         std::cout << ", symbol = " << trans.GetSymbol();
         std::cout << ", children states = " << Convert::ToString(trans.GetChildren());
@@ -777,9 +675,8 @@ void printAut(const Automaton& aut, stateDict* dict) {
     std::cout << std::flush;
 }
 
-string autToStringTimbuk(const Automaton& aut, stateDict* dict)
+string autToStringTimbuk(const Automaton& aut)
 {
-    dict = NULL;        // I've given up printing fancy states names and considering whether the initial state is implicit or not.
     string result;
 
     result = "Ops \n";
@@ -789,7 +686,6 @@ string autToStringTimbuk(const Automaton& aut, stateDict* dict)
     result += "States ";
     for (const state& s : states)
     {
-        //result += (dict==NULL ? "" : translateState(aut, *dict, s)) + " ";
         result += std::to_string(s) + " ";
     }
     result += "\n";
@@ -798,7 +694,6 @@ string autToStringTimbuk(const Automaton& aut, stateDict* dict)
     result += "Final States ";
     for (const state& s : f)
     {
-        //result += (dict==NULL ? "" : translateState(aut, *dict, s)) + " ";
         result += std::to_string(s) + " ";
     }
     result += "\n";
@@ -806,19 +701,14 @@ string autToStringTimbuk(const Automaton& aut, stateDict* dict)
     result += "Transitions \n";
     for (const lv_transition& trans : aut)
     {
-        //result += trans.GetSymbol() + "(" + Convert::ToString(trans.GetChildren()) + ") -> " + translateState(aut, *dict, trans.GetParent()) + "\n";
         result += std::to_string(trans.GetSymbol()) + "(";
-        /*for (const state& s : trans.GetChildren())
-            result += translateState(aut, *dict, s);*/
 
         for(unsigned int i=0; i<trans.GetChildren().size(); i++)
         {
-            //result += translateState(aut, *dict, trans.GetChildren().at(i));
             result += std::to_string(trans.GetChildren().at(i));
             if (i < trans.GetChildren().size()-1)
                 result += ",";
         }
-        //result += ") -> " + translateState(aut, *dict, trans.GetParent()) + "\n";
         result += ") -> " + std::to_string(trans.GetParent()) + "\n";
     }
 

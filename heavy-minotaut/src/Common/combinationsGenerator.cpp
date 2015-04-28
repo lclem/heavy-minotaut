@@ -1,4 +1,18 @@
 
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Implementation file for a class for generating all possible combinations of *
+ *  transitions from a set of states. It works as an auxiliary class for the        *
+ *  computation of the extension of an attack during a simulation computation.      *
+ *  Currently not being needed.                                                     *
+ * 																					*
+ ************************************************************************************/
+
 #include "combinationsGenerator.hh"
 
 Tree::Tree() : children(0)
@@ -66,8 +80,8 @@ void Tree::setChild(unsigned int pos, Tree child)
 	}
 	catch (const std::out_of_range& oor) {
 		std::cerr << "Out of Range error: " << oor.what();
-		std::cerr << " when changing the value at the position " << std::to_string(pos) <<
-		" of this->children which has size " << std::to_string(this->children.size());
+        std::cerr << " when changing the value at the position " << std::to_string(pos)
+                  << " of this->children which has size " << std::to_string(this->children.size());
 		exit_with_error("");
 	}
 }
@@ -300,8 +314,7 @@ vector<vector<MaybeTransition> > genAllTransCombinations_sortedByNumbFinalStates
 }
 
 Tree& vectorTreesAt(vector<Tree>& vec, const unsigned int pos, const char* strct_name){
-    //Tree tree;
-	
+
 	try {
         return vec.at(pos);
 	}

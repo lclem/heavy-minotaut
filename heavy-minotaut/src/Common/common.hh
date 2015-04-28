@@ -1,3 +1,18 @@
+
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Header file for a collection of definitions and functions which are of      *
+ *  general utility, with no particular scope. The is the 'bottom' header file in   *
+ *  this project, ie, any other header file is included, directly or indirectly,    *
+ *  by this one.                                                                    *
+ * 																					*
+ ************************************************************************************/
+
 #ifndef COMMON_HH
 #define COMMON_HH
 
@@ -16,7 +31,6 @@
 #include <stdint.h>
 
 #include <vata/parsing/timbuk_parser.hh>
-//#include <vata/serialization/timbuk_serializer.hh>
 
 #include <vata/explicit_tree_aut.hh>	/* The internal automata representation from libvata */
 
@@ -31,7 +45,7 @@ using std::set;
 using std::unordered_set;
 using filename = string;
 
-extern /*size_t*/ long int TIMEOUT;
+extern long int TIMEOUT;
 
 void exit_with_error(const char*);
 void printVectorArrayInts(const vector<unsigned int[]> &);
@@ -41,5 +55,6 @@ string vectorVectorIntsToString(const vector<vector<int> >&);
 void writeToFile(string filename, string text, bool overwrite = false);
 void outputText(string text, string filename = "");
 string localTime();
+
 
 #endif // COMMON_HH

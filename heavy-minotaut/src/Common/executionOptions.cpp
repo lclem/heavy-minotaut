@@ -1,4 +1,17 @@
 
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Implementation file defining global variables for some of the               *
+ *  execution options in this project. These include a flag indicating whether      *
+ *  3 Value Logic should be used or not, among others.                              *
+ * 																					*
+ ************************************************************************************/
+
 #include "executionOptions.hh"
 
 unsigned int number_of_opts         = 4;
@@ -35,7 +48,8 @@ void setOPT(unsigned int option, unsigned int value)
     OPT.at(option) = value;
 }
 
-/*vector<vector<opt> > genAllOptCombinations()
+/* Possible future implementation.
+ * vector<vector<opt> > genAllOptCombinations()
 {
     vector<unsigned int> numbTrans = mapGetNumbElements(all_trans);
 

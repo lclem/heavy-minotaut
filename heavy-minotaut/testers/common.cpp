@@ -1,4 +1,17 @@
 
+/************************************************************************************
+ *                                  Heavy MinOTAut                  				*
+ *              - heavy minimization algorithms for tree automata					*
+ *                                                                                  *
+ * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 																					*
+ *	Description:																	*
+ * 		Implementation file defining auxiliary functions for the execution of       *
+ * experiments. It includes functions that list files and folders in the            *
+ * filesystem.                                                                      *
+ * 																					*
+ ************************************************************************************/
+
 #include "common.hh"
 
 vector<filename> getAllFilenames(const string directory_str)
@@ -11,7 +24,6 @@ vector<filename> getAllFilenames(const string directory_str)
     struct dirent *ent;
 
     if ((dir = opendir (directory)) != NULL) {
-        /* print all the files and directories within directory */
         while ((ent = readdir (dir)) != NULL) {
             std::string buf(directory);
             buf.append(ent->d_name);
@@ -64,8 +76,6 @@ vector<string> getAllSubfolders(const string folder_str)
 
             if (name[0] == '.')     /* This ensures "." and ".." are not */
                 continue;           /* added to the subfolders vector.   */
-
-
 
             if (ent->d_type == DT_DIR)
             {
