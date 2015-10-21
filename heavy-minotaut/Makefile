@@ -8,6 +8,7 @@
   -pedantic-errors \
   -Wextra \
   -Wall \
+  -Wsign-compare \
   -Wfloat-equal \
   -Wctor-dtor-privacy \
   -Woverloaded-virtual \

@@ -14,8 +14,6 @@
 
 #include "executionOptions.hh"
 
-unsigned int number_of_opts         = 4;
-
 const unsigned int ORDER_OF_ATTACKS_TRANS = 0,
     NO_PARTICULAR_ORDER   = 0,
     SEMI_ORDERED_BY_INITIAL_TRANS   = 1,
@@ -31,8 +29,13 @@ const unsigned int TYPE_OF_HISTORY_OF_BAD_ATKS = 2;
 
 const unsigned int THREE_VALUES_LOGIC = 3;
 const unsigned int OFF   = 0,
-                   ON_V1 = 1,
-                   ON_V2 = 2;
+                   ON    = 1,
+                   ON_V1 = 2,
+                   ON_V2 = 3;
+
+const unsigned int WEAK_ACCEPTANCE_COND = 4;
+
+const unsigned int number_of_opts       = 5;
 
 void startOPT() {
     OPT.resize(number_of_opts);
@@ -41,6 +44,7 @@ void startOPT() {
     OPT[TYPE_OF_HISTORY_OF_GOOD_ATKS] = /*GLOBAL_V2;*/ /*GLOBAL;*/ SEMI_GLOBAL; /*LOCAL;*/ /*NONE;*/
     OPT[TYPE_OF_HISTORY_OF_BAD_ATKS]  = /*GLOBAL_V2;*/ /*GLOBAL;*/ SEMI_GLOBAL; /*LOCAL;*/ /*NONE;*/
     OPT[THREE_VALUES_LOGIC]           = OFF /*ON_V1*/ /*ON_V2*/;
+    OPT[WEAK_ACCEPTANCE_COND]         = /*ON*/  OFF;
 }
 
 void setOPT(unsigned int option, unsigned int value)

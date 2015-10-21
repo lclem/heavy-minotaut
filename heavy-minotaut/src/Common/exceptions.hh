@@ -15,9 +15,12 @@
 #define _EXCEPTIONS_HH_
 
 #include <exception>
+//#include "common.hh"
+#include "automatonHelper.hh"
 
 using namespace std;
 
+using Automaton  =  VATA::ExplicitTreeAut;
 
 struct autHasNoLeafRules : public exception
 {
@@ -31,8 +34,28 @@ struct finished : public exception
 {
 };
 
+/*struct timeout_ : public exception
+{
+};*/
+
 struct timeout_ : public exception
 {
+    Automaton aut;
+
+    // Delete me later
+    //timeout_() { }
+
+    timeout_(Automaton aut)
+    {
+        this->aut = aut;
+    }
+
+    Automaton getAut()
+    {
+        return this->aut;
+    }
 };
+
+void check_timeout(const Automaton &aut, timespec timeout_start, unsigned int timeout = 0);
 
 #endif

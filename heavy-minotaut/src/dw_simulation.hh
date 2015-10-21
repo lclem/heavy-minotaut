@@ -24,15 +24,16 @@
 
 extern bool OPT_RESTART_REFINE_3;
 extern string filename_Gl;
+extern unsigned int pr_depth;
 
-bool attack_loop(const Automaton& aut, const unsigned int numb_states, const state initialState, const vector<bool>& isFinal,
+bool attack_loop(const Automaton& aut, const unsigned int numb_states, const state initialState,
                  const vector<typerank>& ranks, const unsigned int la,
                  const vector<vector<bool> >& W, const vector<vector<transition> >& all_trans,
                  const unsigned int index,
                  vector<MaybeTransition>& combination, vector<vector<Step*> > steps, const state q,
                  const unsigned int depth, vector<vector<set<code> > >& historyOfBadAtks,
                  vector<vector<set<code> >>& historyOfGoodAtks,
-                 float& codeGenerationTime, float& historiesTimeConsump);
+                 float& codeGenerationTime, float& historiesTimeConsump, timespec *timestart_timeout, unsigned int timeout);
 
 bool attack_loop_with_3VL(const Automaton& aut, const unsigned int numb_states, const state initialState, const vector<bool>& isFinal,
                  const vector<typerank>& ranks, const unsigned int la,
@@ -43,6 +44,14 @@ bool attack_loop_with_3VL(const Automaton& aut, const unsigned int numb_states, 
                  vector<vector<codes_map >>& historyOfGoodAtks,
                  float& codeGenerationTime, float& historiesTimeConsump);
 
+bool attack_loop_pr(const Automaton& aut, const unsigned int numb_states,
+                 const state initialState,
+                 const vector<typerank>& ranks, const unsigned int la,
+                 const vector<vector<transition> >& all_trans, const unsigned int index,
+                 vector<MaybeTransition>& combination, vector<vector<Step*> > steps, const state q, const unsigned int depth,
+                 unsigned int &codeGenerationTime, unsigned int &historiesTimeConsump, unsigned int &counter_normalAtks, unsigned int &counter_goodAtks, unsigned int &counter_badAtks,
+                 timespec* timestart_timeout, unsigned int timeout = 0);
+
 float dw_simulation(const Automaton&, const unsigned int, vector<vector<bool> >&,
                     const unsigned int, const vector<typerank> &ranks,
                     timespec *timeout_start = NULL, unsigned int timeout = 0);
@@ -51,5 +60,18 @@ void dw_ord_simulation_lvata(const Automaton& aut, vector<vector<bool> >& W, con
 
 void dw_ord_simulation_lvata_strict(const Automaton& aut, vector<vector<bool> >& W,
                                     const unsigned int numb_states);
+
+void pre_refine_lin(vector<vector<bool> >& W, const Automaton& aut,
+                    const unsigned int depth,
+                    const unsigned int numb_states,
+                    const unsigned int numb_symbols,
+                    const vector<typerank>& ranks,
+                    const state initialState);
+void pre_refine_branch(vector<vector<bool> >& W, const Automaton& aut,
+                        const unsigned int depth,
+                        const unsigned int numb_states,
+                        const vector<typerank>& ranks,
+                        const state initialState,
+                        timespec* timestart_timeout = NULL, unsigned int timeout = 0);
 
 #endif

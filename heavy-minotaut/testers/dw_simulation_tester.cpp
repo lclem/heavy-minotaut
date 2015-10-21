@@ -31,7 +31,8 @@ static const vector<string> DIRS = {
 
 static void printSummary_DifferentLookaheads(bool result_consCheck, unsigned int max_la,
                                              float lvata_time, MetaData* metadata, TestData* testData,
-                                             Timeout* timeout) {
+                                             Timeout* timeout)
+{
     std::cout << "\nSummary: For a total of " << metadata->total << " automata and for each la=1.." << max_la
               << ", I applied the following Procedure: "
               << "computation of the maximal dw-la sim followed by a Reduction method of quotienting "
@@ -91,8 +92,8 @@ static void printSummary_DifferentLookaheads(bool result_consCheck, unsigned int
 /* For each automaton, tries computing dw simulation with different lookaheads. In case of success, computes
  * the corresponding quotiented and pruned automaton and checks if this is equivalent to the initial automaton
  * (consistency check). */
-void CheckDifferentLookaheads_3VL(unsigned int max_la) {
-
+void CheckDifferentLookaheads_3VL(unsigned int max_la)
+{
     auto start = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::high_resolution_clock::now() - start;   // Just setting the auto type.
     float time_sec;
@@ -103,8 +104,8 @@ void CheckDifferentLookaheads_3VL(unsigned int max_la) {
     MetaData* metaData = new MetaData();      // Stores data about the input automata.
     float lvata_time = 0;                     // Stores the avg time taken by libvata to compute ordinary dw simulations.
 
-    for (unsigned int i=0; i<NUMB_TESTS; i++) {
-
+    for (unsigned int i=0; i<NUMB_TESTS; i++)
+    {
         /* Automata parsing and data recording. */
         string autStr = VATA::Util::ReadFile(filenames.at(i));
 
@@ -295,9 +296,7 @@ void CheckDifferentLookaheads_3VL(unsigned int max_la) {
 
 }
 
-
-tuple<bool, unsigned int, float, MetaData*, TestData*, Timeout*>
-    CheckDifferentLookaheads(unsigned int max_la) {
+tuple<bool, unsigned int, float, MetaData*, TestData*, Timeout*> CheckDifferentLookaheads(unsigned int max_la) {
 
     auto start = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::high_resolution_clock::now() - start;   // Just setting the auto type.

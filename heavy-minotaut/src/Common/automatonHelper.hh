@@ -20,9 +20,9 @@
 #include "exceptions.hh"
 
 using Automaton                  =  VATA::ExplicitTreeAut;
-using stateSet                   =  std::unordered_set<unsigned int>;
 using Convert                    =  VATA::Util::Convert;
-using state                      =  long unsigned int;	 	   /* Internal representation of states */
+using state                      =  VATA::AutBase::StateType; //long unsigned int;	 	   /* Internal representation of states */
+using stateSet                   =  std::unordered_set<state>;
 using stateDict                  =  VATA::AutBase::StateDict;
 using stateExt                   =  const std::basic_string<char>;   /* External representation of states */
 using stateToStateMap            =  std::unordered_map<state, state>;
@@ -43,6 +43,7 @@ using simParam                   =  VATA::SimParam;
 using finalStateSet              =  std::unordered_set<state>;
 
 Automaton parseFromString(string, stateDict&, bool, bool);
+tuple<Automaton,Automaton> parseFromString2(string autStr, stateDict& stateDict, bool flag_removeUseless=true, bool flag_removeUnreachable=true);
 Automaton copyAutWithoutTrans(const Automaton &old_aut);
 Automaton copyAut(const Automaton &old_aut, bool deep_copy = true);
 Automaton addInitialState(const Automaton& old_aut);
@@ -55,6 +56,7 @@ symbol getGreatestUsedSymbol(const Automaton& aut);
 state getInitialState(const Automaton& aut);
 unsigned int getNumbUsedStates(const Automaton &);
 unsigned int getNumbTransitions(const Automaton&);
+unsigned int getNumbLeafTransitions(const Automaton&);
 unsigned int getNumbSymbols(const Automaton &);
 float getTransitionDensity(const Automaton& aut);
 float getAvgRank(const Automaton &aut);
@@ -75,6 +77,7 @@ float measureTransDensReduction(const Automaton &smaller, const Automaton &large
 vector<float> measureTransOverlaps(const Automaton& aut);
 state reindexStates(Automaton& aut);
 bool equiv(const Automaton &aut1, const Automaton &aut2);
+bool equiv2(const Automaton &aut1, const Automaton &aut2);
 bool langIsEmpty(const Automaton& aut);
 string autToStringTimbuk(const Automaton& aut);
 void printAut(const Automaton &, stateDict * = NULL);

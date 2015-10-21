@@ -18,7 +18,7 @@ $ git clone https://github.com/ric-almeida/heavy-minotaut.git
 Installation
 ============
 
-1) Install libvata (see ../ondrik-libvata/README for more info)
+1) Install libvata (see ../ondrik-libvata/README for more info; an additional prerequisite of libvata is g++ >= 4.8.0)
 
 2) Run $ make minotaut
 
@@ -68,15 +68,16 @@ c(q2, q2) -> q2
 ~~~~~~~~~~~~~~~~~~~~~
 
 
-Usage Example
-=============
+Usage
+=====
 
-Let dir be a directory where (at least) one tree automaton is saved as a file (using the Timbuk format; see Input Format). 
+Let input_dir be a directory containing tree automata individually saved as files (in the Timbuk format; see Input Format). 
 By calling
 
-	$ ./minotaut la-dw la-up dir [timeout] 
+	$ ./minotaut la-dw la-up input_dir output_dir [timeout] 
 
-for each file 'file' in dir, a new file called 'file_minimized_with_Heavy(la-dw,la-up)' will be created, as a result of applying
-Heavy(la-dw,la-up) to the automaton in 'file'. The optional timeout parameter must be in seconds and applies to each application of the
-Heavy method to an automaton. 
+each automaton in input_dir will be minimized with Heavy(la-dw,la-up) and a file containing its minimized version will be created
+in output_dir. The minimization percentages for each automaton will be printed in the standard output: 
+the % of states and transitions in the automaton at the end of the minimization.
+The optional timeout parameter must be in seconds and applies to each application of the Heavy method to an automaton. 
 

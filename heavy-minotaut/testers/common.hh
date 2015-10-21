@@ -23,5 +23,7 @@ vector<filename> getAllFilenames(const vector<string>& dirs);
 vector<filename> getAllFilenames(const string dir);
 vector<string> getAllSubfolders(const string folder_str);
 string appendTimbukFilename(string filename, string sufix);
+string getLocalFilename(const string filename);
+
 
 #endif // COMMON_H

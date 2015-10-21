@@ -49,7 +49,8 @@ vector<filename> getAllFilenames(const string directory_str)
     return all_filenames;
 }
 
-vector<filename> getAllFilenames(const vector<string> &dirs) {
+vector<filename> getAllFilenames(const vector<string> &dirs)
+{
     vector<filename> all_filenames;
 
     for (const string directory : dirs) {
@@ -92,3 +93,15 @@ string appendTimbukFilename(string filename, string sufix)
 {
     return filename.insert((filename.find(".timbuk")==string::npos) ? filename.size() : filename.find(".timbuk"), sufix);
 }
+
+string getLocalFilename(const string filename)
+{
+
+    std::size_t found = filename.find_last_of("/\\");
+    if (found == string::npos)
+        return filename;
+    else
+        return filename.substr(found+1);
+
+}
+

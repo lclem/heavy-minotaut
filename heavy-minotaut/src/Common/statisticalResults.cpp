@@ -173,6 +173,11 @@ void TestData::updateAvgReductions(float q_red, float delta_red, float transDens
     this->avg_transDens_reduction = ( this->avg_transDens_reduction*(this->total-1) + transDens_red ) / (float) this->total;
 }
 
+void TestData::updateAvgTime(float time)
+{
+    this->avg_time  =  ( this->avg_time*(this->total-1) + time ) / (float) this->total;
+}
+
 void TestData::updateReductionBuckets(float q_red, float delta_red, float transDens_red)
 {
     if (q_red >= 100)     // >= instead of ==, to make the float comparison safe.

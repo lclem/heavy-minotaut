@@ -55,6 +55,7 @@ class TestData
         float avg_q_reduction = 0;              // on average, how many of the states (%) are still present in the automata after the reduction
         float avg_delta_reduction = 0;          // on average, how many of the transitions (%) are still present in the automata after the reduction
         float avg_transDens_reduction = 0;          // on average, how does the transitions density before the reduction compare to that after it.
+        float avg_time = 0;
         vector<float> avg_sizes_relations;
         vector<float> avg_times_relations;
         vector<float> avg_times_quotientings;
@@ -71,6 +72,7 @@ class TestData
         void set(unsigned int numb_relations, unsigned int numb_quotientings, unsigned int numb_prunings);
         void updateAvgSizesRels(vector<unsigned int> cards);
         void updateAvgNumbsRefs(vector<float> numbs_refs);
+        void updateAvgTime(float time);
         void updateAvgTimes(vector<float> times_relations, vector<float> times_quotientings, vector<float> times_prunings, float time_consCheck);
         void updateAvgTimes(vector<float> times_relations, vector<float> times_quotientings, vector<float> times_prunings);
         void checkGreatestReductions(float q_red, float delta_red, float transDens_red);

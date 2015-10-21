@@ -8,7 +8,7 @@
  *	Description:																	*
  * 		Header file containing declarations of global variables for some of the     *
  *  execution options in this project. These include a flag indicating whether      *
- *  3 Value Logic should be used or not, among others.                              *
+ *  3 Value Logic will be used or not, among others.                                *
  * 																					*
  ************************************************************************************/
 
@@ -36,8 +36,11 @@ extern const unsigned int TYPE_OF_HISTORY_OF_BAD_ATKS;
 
 extern const unsigned int THREE_VALUES_LOGIC;
 extern const unsigned int OFF,
+                          ON,
                           ON_V1,
                           ON_V2;
+
+extern const unsigned int WEAK_ACCEPTANCE_COND;
 
 extern vector<unsigned int> OPT;
 

@@ -245,7 +245,7 @@ void extendAttack(vector<vector<Step*> >& steps, const unsigned int depth, vecto
 }
 
 void initializeW(const Automaton& aut, vector<vector<bool> >& W,
-                 const unsigned int n, const bool strict)
+                 const unsigned int n, const bool strict, const bool default_value)
 {
     stateSet usedStates = getUsedStates(aut);
 
@@ -258,7 +258,7 @@ void initializeW(const Automaton& aut, vector<vector<bool> >& W,
             if (strict && p==q)
                 W.at(p).at(q) = false;
             else
-                W.at(p).at(q) = true;
+                W.at(p).at(q) = default_value;
         }
 
 }

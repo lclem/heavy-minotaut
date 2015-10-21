@@ -55,6 +55,7 @@ string vectorVectorIntsToString(const vector<vector<int> >&);
 void writeToFile(string filename, string text, bool overwrite = false);
 void outputText(string text, string filename = "");
 string localTime();
+string localTime2();
 
 
 #endif // COMMON_HH

@@ -106,6 +106,30 @@ Automaton parseFromString(string autStr, stateDict& stateDict, bool flag_removeU
     return aut;
 }
 
+tuple<Automaton,Automaton> parseFromString2(string autStr, stateDict& stateDict, bool flag_removeUseless, bool flag_removeUnreachable) {
+    std::unique_ptr<VATA::Parsing::AbstrParser> parser(new VATA::Parsing::TimbukParser());
+
+    autStr = removeAlphabetLine(autStr);
+
+    // create and load the automaton
+    Automaton auti;
+    Automaton::AlphabetType onTheFlyAlph(new Automaton::OnTheFlyAlphabet);
+    auti.SetAlphabet(onTheFlyAlph);
+    auti.LoadFromString(*parser, autStr, stateDict);
+
+    Automaton autf = addInitialState(auti);
+
+    if (flag_removeUseless)
+        autf = autf.RemoveUselessStates();  // Warning: there is the assumption that final states are never useless, so this never deletes them
+    if (flag_removeUnreachable)
+        autf = autf.RemoveUnreachableStates();
+
+    NO_STATE = getGreatestUsedState(autf)+1;
+    NO_SYMBOL = getGreatestUsedSymbol(autf)+1;
+
+    return std::tuple<Automaton,Automaton> (auti,autf);
+}
+
 vector<unsigned int> mapGetNumbTrans(const vector<vector<transition> >& vec) {
     unsigned int size = vec.size();
 
@@ -121,7 +145,7 @@ vector<unsigned int> mapGetNumbTrans(const vector<vector<transition> >& vec) {
 stateSet getUsedStates(const Automaton& aut)
 {
     // Create an unordered set called states.
-    std::unordered_set<unsigned int> states;
+    std::unordered_set<state> states;
 
     for (const lv_transition trans : aut)
     {
@@ -160,6 +184,8 @@ float getTransitionDensity(const Automaton& aut)
         transDens = 0;
     else
         transDens = (float) numb_transitions / ((float) numb_states * (float) numb_symbols);
+
+    //outputText("no of states = " + std::to_string(numb_states) + " no of trans = " + std::to_string(numb_transitions) + " no of symbs = " + std::to_string(numb_symbols) + "\n");
 
     return transDens;
 }
@@ -336,6 +362,17 @@ bool equiv(const Automaton& aut1, const Automaton& aut2)
     return (result1 && result2);
 }
 
+bool equiv2(const Automaton& aut1, const Automaton& aut2)
+{
+
+    bool result1 = true;
+    result1 = VATA::ExplicitTreeAut::CheckInclusion(aut1, aut2);
+    bool result2 = false;
+    result2 = VATA::ExplicitTreeAut::CheckInclusion(aut2, aut1);
+
+    return (result1 && result2);
+}
+
 bool langIsEmpty(const Automaton& aut)
 {
     Automaton empty;
@@ -387,6 +424,23 @@ unsigned int getNumbTransitions(const Automaton& aut)
     unsigned int c = 0;
     for (const lv_transition trans : aut)
         c++;
+
+    return c;
+}
+
+unsigned int getNumbLeafTransitions(const Automaton& aut)
+{
+    unsigned int c = 0;
+    state initialState = getInitialState(aut);
+    // This assumes that the explicit initial state has been added to the automaton,
+    // which necessarily happens except when the input automaton had no leaf-rules
+    // (in such a case, discarding the automaton is advisable).
+    vector<state> initial_state_children = {initialState};
+    for (const lv_transition trans : aut)
+    {
+        if (trans.GetChildren() == initial_state_children)
+            c++;
+    }
 
     return c;
 }

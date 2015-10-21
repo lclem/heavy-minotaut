@@ -94,7 +94,7 @@ void extendAttack(vector<vector<Step*> >& steps, const unsigned int depth, vecto
 
 void printVectorVectorMaybeTransitions(const vector<vector<MaybeTransition> >&);
 typerank getRank(const symbol);
-void initializeW(const Automaton &aut, vector<vector<bool> >& W, const unsigned int n, const bool strict=false);
+void initializeW(const Automaton &aut, vector<vector<bool> >& W, const unsigned int n, const bool strict=false, const bool default_value=true);
 vector<vector<bool> > transClosure(vector<vector<bool> >, const unsigned int);
 void asymTransClosure(vector<vector<bool> >&, const unsigned int);
 void extractStrictRelation(vector<vector<bool> >&, const unsigned int);

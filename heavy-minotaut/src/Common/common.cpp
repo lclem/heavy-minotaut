@@ -38,6 +38,8 @@ unsigned int vectorUIntsAt(const vector<unsigned int>& vec, const unsigned int p
 	return result;
 }
 
+
+
 /* String and IO functions */
 
 void printVectorArrayInts(const vector<unsigned int[2]>& vec)
@@ -70,14 +72,28 @@ void printVectorVectorInts(const vector<vector<int> >& vec)
 
 string localTime()
 {
-    // current date/time based on current system
-    time_t now = time(0);
-    // convert now to string form
-    char* dt = ctime(&now);
 
-    string str(dt);
+    char s[1000];
 
-    return str;
+    time_t t = time(NULL);
+    struct tm * p = localtime(&t);
+
+    strftime(s, 1000, "%a_(%Y-%b-%d-%T)", p);
+
+    return s;
+}
+
+string localTime2()
+{
+
+    char s[1000];
+
+    time_t t = time(NULL);
+    struct tm * p = localtime(&t);
+
+    strftime(s, 1000, "%Y_%b_%d_%T", p);
+
+    return s;
 }
 
 void writeToFile(string filename, string text, bool overwrite)

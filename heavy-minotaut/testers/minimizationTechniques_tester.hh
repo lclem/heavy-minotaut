@@ -26,6 +26,6 @@
 #include "../src/Common/statisticalResults.hh"
 
 void minimizationTechniques_tester();
-void simple_Heavy_tester(unsigned int la_dw, unsigned int la_up, string dir);
+void simple_Heavy_tester(unsigned int sequence_version, unsigned int la_dw, unsigned int la_up, string input_dir, string output_dir);
 
 #endif // MINIMIZATIONTECHNIQUES_TESTER_H
