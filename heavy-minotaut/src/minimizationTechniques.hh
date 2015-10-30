@@ -17,7 +17,7 @@
 
 #include "../src/dw_simulation.hh"
 #include "../src/up_simulation.hh"
-#include "../src/combined_preorder.hh"
+#include "../src/combined_relation.hh"
 #include "../src/quotienting.hh"
 #include "../src/pruning.hh"
 #include "../src/Common/statisticalResults.hh"
@@ -43,17 +43,17 @@ extern const unsigned int PRUN_WITH_P_UP_LA_WITH_DW_1_AND_DW_1;
 extern const unsigned int numbPrunings                        ;
 
 
-Automaton removeDeadStates(const Automaton& aut_i);
+AutData removeDeadStates(const AutData &autData);
 
-Automaton heavy(unsigned int sequence_version, const Automaton &aut_i, unsigned int la_dw,
+AutData heavy(const AutData &autData, unsigned int la_dw,
                      unsigned int la_up,
                      TestData& testData = emptyTestData,
                      string log_humanread_filename = "");
-Automaton heavyGradual(unsigned int sequence_version, const Automaton& aut_i, unsigned int la_dw, unsigned int la_dw_max,
-                       unsigned int greatest_symbol, vector<typerank> ranks,
+AutData heavyGradual(const AutData &autData_i, unsigned int la_dw, unsigned int la_dw_max,
+                       unsigned int greatest_symbol,
                        TestData& testData = emptyTestData, timespec* timeout_start = NULL, string log_humanread_filename = "");
 
-void applyProcedure1(const Automaton& aut_i, stateDict sDict,
+void applyProcedure1(const Automaton& aut_i, const vector<typerank> &ranks, stateDict sDict,
                     unsigned int la_dw,  unsigned int la_up,
                     MetaData &metaData             =  emptyMetaData,
                     TestData &testData_ru          =  emptyTestData,
@@ -67,7 +67,7 @@ void applyProcedure1(const Automaton& aut_i, stateDict sDict,
                     string log_humanread_filename  =  "",
                     string log_machread_filename   =  "", string log_machread_heavy_1_1_times_filename = "");
 
-void applyProcedure2(const Automaton& aut_i, stateDict sDict, MetaData& metaData,
+void applyProcedure2(const Automaton& aut_i, const vector<typerank> &ranks, stateDict sDict, MetaData& metaData,
                     TestData& testData_ru,
                     TestData& testData_quot,    Timeout& timeout_quot,
                     TestData& testData_qAndP,   Timeout& timeout_qAndP,
@@ -76,13 +76,13 @@ void applyProcedure2(const Automaton& aut_i, stateDict sDict, MetaData& metaData
                     string log_humanread_filename, string log_machread_filename,
                     string log_machread_heavy_times_filename);
 
-void applyProcedure22(const Automaton& aut_i, stateDict sDict, MetaData& metaData,
+void applyProcedure22(const Automaton& aut_i, const vector<typerank> &ranks, stateDict sDict, MetaData& metaData,
                     TestData& testData_heavy11, TestData& testData_heavy11_rels, Timeout& timeout_heavy11,
                     TestData& testData_heavy24, TestData& testData_heavy24_rels, Timeout& timeout_heavy24,
                     string log_humanread_filename, string log_machread_filename,
                     string log_machread_heavy_times_filename);
 
-void applyProcedure3(const Automaton& aut_i, stateDict sDict, MetaData& metaData,
+void applyProcedure3(const AutData &autData_i, stateDict sDict, MetaData& metaData,
                     TestData& testData_ru,
                     TestData& testData_quot,    Timeout& timeout_quot,
                     TestData& testData_qAndP,   Timeout& timeout_qAndP,
@@ -92,45 +92,44 @@ void applyProcedure3(const Automaton& aut_i, stateDict sDict, MetaData& metaData
                     string log_humanread_filename, string log_machread_filename,
                     string log_machread_heavy_times_filename);
 
-Automaton quotient_with_combined_preorder(const Automaton &aut,
+AutData quotient_with_combined_relation(const AutData &autData,
                                           unsigned int la_dw, unsigned int la_up,
                                           unsigned int numb_states = 0,
-                                          unsigned int numb_symbols = 0,
-                                          vector<typerank> ranks = {},
+                                          unsigned int greatest_symbol = 0,
                                           timespec *timeout_start = NULL, unsigned int timeout = 0);
 
 void quotient_with_up_la_dw_la(Automaton& aut_i,
                                       unsigned int la_dw, unsigned int la_up,
+                                      const vector<typerank>& ranks,
                                       unsigned int numb_states = 0,
                                       unsigned int numb_symbols = 0,
-                                      vector<typerank> ranks = {},
                                       bool use_lvata = false);
 
 void prune_with_up_la_dw_la_and_strict_dw_la(Automaton& aut_i,
                                              stateDict stateDict,
                                              unsigned int la_dw, unsigned int la_up,
+                                             const vector<typerank>& ranks,
                                              unsigned int numb_states = 0,
                                              unsigned int numb_symbols = 0,
-                                             vector<typerank> ranks = {}, bool use_lvata = false);
+                                             bool use_lvata = false);
 
-void applyHeavy(/*const Automaton& autI, */unsigned int sequence_version,
-                const Automaton& aut_i, stateDict sDict, MetaData& metaData,
+void applyHeavy(const AutData &autData_i, stateDict sDict, MetaData& metaData,
                 unsigned int la_dw, unsigned int la_up,
                 TestData& testData_heavy, Timeout& timeout_heavy, string log_machread_filename,
                 string log_machread_heavy_times_filename);
 
-void applyQuotCombinedPreorder(const Automaton& aut, stateDict sDict, MetaData& metaData,
+void applyQuotCombinedPreorder(const AutData& autData, stateDict sDict, MetaData& metaData,
                                unsigned int la_dw, unsigned int la_up,
                                TestData& testData, Timeout& timeout,
                                string log_humanread_filename,
                                string log_machread_filename,
                                string log_machread_times_filename);
 
-Automaton applyQuotDwLa(const Automaton& aut_i,
-                    unsigned int la_dw, unsigned int greatest_state  = 0,
+AutData applyQuotDwLa(const AutData &autData,
+                    unsigned int la_dw,
+                    unsigned int greatest_state  = 0,
                     unsigned int greatest_symbol = 0,
-                    vector<typerank> ranks = {},
-                    bool use_lvata = false,
                     string log_humanread_filename = "");
+
 
 #endif // UP_SIMULATION_TESTER_H

@@ -13,9 +13,11 @@
 
 #include "quotienting.hh"
 
-/* Converts a states preorder (represented as a nxn boolean matrix) into an equivalence binary relation
+/* Converts a states preorder (represented as a boolean matrix) into an equivalence binary relation
  * with libvata's type;                      */
-statesMap convertPreorderToBinEquiv(const Automaton& aut, unsigned int n, const vector<vector<bool> >& P) {
+statesMap convertPreorderToBinEquiv(const Automaton& aut, const vector<vector<bool> >& P)
+{
+    unsigned int n = P.size();
     statesMap map;
     state initialState = getInitialState(aut);
 
@@ -53,16 +55,20 @@ statesMap convertPreorderToBinEquiv(const Automaton& aut, unsigned int n, const 
 
 /* Calls convertPreorderToBinEquiv to obtain a states map from the given preorder,
  * and then calls libvata's function for quotienting automata with that map. */
-Automaton quotientAutomaton(const Automaton& old_aut, const vector<vector<bool> >& W,
-                            const unsigned int n) {
-    if (n==0) return old_aut;
+AutData quotientAutomaton(const AutData& old_autData, const vector<vector<bool> >& W)
+{
 
-    statesMap map = convertPreorderToBinEquiv(old_aut,n,W);
+    if (W.size()==0) return old_autData;
 
-    Automaton aut;
-    aut = removeInitialState(old_aut);
+    Automaton old_aut = getAut(old_autData);
+    statesMap map = convertPreorderToBinEquiv(old_aut,W);
+
+    Automaton aut = removeInitialState(old_aut);
     aut = aut.CollapseStates(map);
     aut = addInitialState(aut);
 
-    return aut;
+    AutData new_autData = wrapAutData(aut,getRanks(old_autData));
+
+    return new_autData;
+
 }

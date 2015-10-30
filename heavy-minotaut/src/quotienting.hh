@@ -22,7 +22,7 @@ using std::vector;
 using statesMap = VATA::ExplicitTreeAut::StateToStateMap;
 
 statesMap convertPreorderToBinEquiv(const Automaton &aut, const vector<vector<bool> >& P);
-Automaton quotientAutomaton(const Automaton & old_aut, const vector<vector<bool> >& W, const unsigned int n);
+AutData quotientAutomaton(const AutData &old_autData, const vector<vector<bool> >& W);
 
 
 #endif // QUOTIENTING_HH

@@ -7,7 +7,7 @@
  * 																					*
  *	Description:																	*
  * 		Implementation file defining auxiliary functions for the execution of       *
- * experiments. It includes functions that list files and folders in the            *
+ * tests. It includes functions that list files and folders in the                  *
  * filesystem.                                                                      *
  * 																					*
  ************************************************************************************/
@@ -23,16 +23,19 @@ vector<filename> getAllFilenames(const string directory_str)
     DIR *dir;
     struct dirent *ent;
 
-    if ((dir = opendir (directory)) != NULL) {
-        while ((ent = readdir (dir)) != NULL) {
+    if ((dir = opendir (directory)) != NULL)
+    {
+        while ((ent = readdir (dir)) != NULL)
+        {
             std::string buf(directory);
             buf.append(ent->d_name);
 
-            std::string buf2(directory);
+            std::string dir(directory);
 
-            if (buf != buf2+"."
-                    && buf != buf2+".."                 // Exclude the parent directory from the list.
+            if (buf != dir+"."
+                    && buf != dir+".."                  // Exclude the parent directory from the list.
                     && buf.at(buf.size()-1) != '~'      // Exclude temp files ~.
+                    && buf != dir+"README.txt"
                     && VATA::Util::ReadFile(buf)!="")   // Exclude files with wrong syntax.
             {
                 all_filenames.push_back(buf);
@@ -42,7 +45,7 @@ vector<filename> getAllFilenames(const string directory_str)
     }
     else
     {
-        /* could not open directory */
+        /* If it could not open directory */
         perror ("error opening dir.");
     }
 
@@ -53,7 +56,8 @@ vector<filename> getAllFilenames(const vector<string> &dirs)
 {
     vector<filename> all_filenames;
 
-    for (const string directory : dirs) {
+    for (const string directory : dirs)
+    {
         vector<filename> aux = getAllFilenames(directory);
         all_filenames.insert(all_filenames.end(), aux.begin(), aux.end());
     }

@@ -16,6 +16,7 @@
 #ifndef COMMON_HH
 #define COMMON_HH
 
+
 #include <utility>      // std::pair
 #include <stddef.h>		/* Allows to use ptr = NULL, for eg. */
 #include <string>       /* std::string, std::to_string */
@@ -24,7 +25,6 @@
 #include <vector>
 #include <stdexcept>    /* std::out_of_range */
 #include <stddef.h>		/* Allows to use ptr = NULL, for eg. */
-#include <algorithm>    // std::min_element, std::max_element
 #include <stdexcept>    /* std::out_of_range */
 #include <chrono>
 #include <stdlib.h>
@@ -52,6 +52,7 @@ void printVectorArrayInts(const vector<unsigned int[]> &);
 unsigned int vectorUIntsAt(const vector<unsigned int>&, const unsigned int, const string);
 void printVectorVectorInts(const vector<vector<int> > &);
 string vectorVectorIntsToString(const vector<vector<int> >&);
+vector<vector<bool> > createBoolMatrix(unsigned int numb_rows, unsigned int numb_columns, bool cell_value);
 void writeToFile(string filename, string text, bool overwrite = false);
 void outputText(string text, string filename = "");
 string localTime();

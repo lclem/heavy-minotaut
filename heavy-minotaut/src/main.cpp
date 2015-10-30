@@ -21,19 +21,19 @@ int main(int argc, char* argv[])
 {
     startOPT();
 
-    if (argc == 1)
+    /*if (argc == 1)
     {
         minimizationTechniques_tester();
         return 1;
-    }
+    }*/
 
     if (argc < 5)
     {
         std::cout << "Please use '"
-                  << argv[0] << " la-dw la-up dir [timeout]' to apply Heavy(la-dw,la-up) to each automaton "
-                  << "(with timbuk syntax) saved in a file in directory dir. "
+                  << argv[0] << " la-dw la-up input_dir output_dir [timeout]' to apply Heavy(la-dw,la-up) to each automaton "
+                  << "(with timbuk syntax) in the directory input_dir. "
                   << "The timeout parameter is optional and must be in seconds. "
-                  << "Each automaton in a file ta.timbuk will be minimized and saved in the file ta_minimized_with_Heavy(x,y).timbuk.\n";
+                  << "Each automaton in a file ta.timbuk will be minimized and saved in the output_dir as a file named ta_minimized_with_Heavy(x,y).timbuk.\n";
         return 0;
     }
     else
@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
         if (argc == 6)
             TIMEOUT = (boost::lexical_cast<long int>(argv[5]));
 
-        simple_Heavy_tester(1, la_dw, la_up, input_dir, output_dir);
+        simple_Heavy_tester(la_dw, la_up, input_dir, output_dir);
 
         return 1;
     }

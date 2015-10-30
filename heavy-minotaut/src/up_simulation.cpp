@@ -14,7 +14,7 @@
 #include "up_simulation.hh"
 
 bool defend(const Automaton& aut, Step& step, const state q, vector<vector<pair<transition,size_t>> >& trans_botup,
-            const bool* isFinal, const vector<typerank> ranks,
+            const vector<bool> isFinal, const vector<typerank> ranks,
             const vector<vector<bool> >& param_rel, const bool strict,
             const vector<vector<bool> >& W,
             timespec* timestart_timeout, unsigned int timeout = 0)
@@ -66,7 +66,7 @@ bool defend(const Automaton& aut, Step& step, const state q, vector<vector<pair<
 
 bool attack(const Automaton& aut, Step* leafStep, Step& rootStep, const state q,
             const unsigned int depth, const unsigned int la,
-            vector<vector<pair<transition,size_t>> >& trans_botup, const bool* isFinal, const vector<typerank> ranks,
+            vector<vector<pair<transition,size_t>> >& trans_botup, const vector<bool> isFinal, const vector<typerank> ranks,
             const vector<vector<bool> >& param_rel, const bool strict, const vector<vector<bool> >& W,
             timespec* timestart_timeout, unsigned int timeout = 0)
 {
@@ -114,7 +114,7 @@ bool attack(const Automaton& aut, Step* leafStep, Step& rootStep, const state q,
     return false;
 }
 
-float refine(const Automaton& aut, const bool* isFinal, const vector<typerank> ranks,
+float refine(const Automaton& aut, const vector<bool> isFinal, const vector<typerank> ranks,
              vector<vector<pair<transition,size_t>> >& trans_botup,
              const unsigned int la, const vector<vector<bool> >& param_rel,
              const bool strict, vector<vector<bool> >& W, const unsigned int n,
@@ -164,19 +164,21 @@ float refine(const Automaton& aut, const bool* isFinal, const vector<typerank> r
 /* Returns a 3D vector post_len such that post_len[p][s][i] contains the number of transitions
    (bottom-up) by s which have p as the i-th child. */
 vector<vector<vector<unsigned int> > > getPostLen(const vector<vector<pair<transition,size_t>> >& trans_botup,
-                                                  const unsigned int numb_states, const unsigned int numb_symbols,
+                                                  const unsigned int numb_states, const unsigned int greatest_symbol,
                                                   const vector<typerank>& ranks)
 {
-    setGreatestRank(ranks);
-    vector<unsigned int> vec_indexes(GREATEST_RANK,0);
-    vector<vector<unsigned int> > vec_symbols(numb_symbols, vec_indexes);
+
+    vector<unsigned int> vec_indexes(getGreatestRank(ranks),0);
+    vector<vector<unsigned int> > vec_symbols(greatest_symbol+1, vec_indexes);
     vector<vector<vector<unsigned int> > > post_len(numb_states, vec_symbols);
 
     unsigned int size = trans_botup.size();
-    for (unsigned int state=0; state<size; state++) {
+    for (unsigned int state=0; state<size; state++)
+    {
         const vector<pair<transition,size_t> >& trans_to_state = trans_botup.at(state);
         // trans that have 'state' as one of the children
-        for (const pair<transition,size_t> pair_ : trans_to_state) {
+        for (const pair<transition,size_t> pair_ : trans_to_state)
+        {
             try {
                 post_len.at(state).at(pair_.first.GetSymbol()).at(pair_.second)++;
             }
@@ -194,7 +196,8 @@ vector<vector<vector<unsigned int> > > getPostLen(const vector<vector<pair<trans
 
 vector<vector<bool> >& pre_refine(vector<vector<bool> >& W, const Automaton& aut,
                                   const vector<vector<vector<unsigned int> > >& post_len,
-                                  const unsigned int numb_states, const unsigned int numb_symbols,
+                                  const unsigned int numb_states, const unsigned int greatest_symbol,
+                                  const typerank greatest_rank,
                                   timespec* timestart_timeout = NULL, unsigned int timeout = 0)
 {
 
@@ -204,8 +207,8 @@ vector<vector<bool> >& pre_refine(vector<vector<bool> >& W, const Automaton& aut
         {
             if (timestart_timeout != NULL) check_timeout(aut, *timestart_timeout, timeout);
 
-            for (unsigned int s=0; s<numb_symbols && W.at(p).at(q); s++)
-                for (unsigned int i=0; i<GREATEST_RANK && W.at(p).at(q); i++)
+            for (unsigned int s=0; s<greatest_symbol+1 && W.at(p).at(q); s++)
+                for (unsigned int i=0; i<greatest_rank && W.at(p).at(q); i++)
                     if (post_len.at(p).at(s).at(i) && !post_len.at(q).at(s).at(i))
                         W.at(p).at(q) = false;
         }
@@ -214,17 +217,25 @@ vector<vector<bool> >& pre_refine(vector<vector<bool> >& W, const Automaton& aut
 }
 
 
-float up_simulation(const Automaton& aut, const unsigned int la,
-                    const vector<vector<bool> >& param_rel, const bool param_strict,
-                    vector<vector<bool> >& W, const unsigned int n,
-                    const unsigned int numb_symbols, const vector<typerank>& ranks,
-                    timespec* timeout_start, unsigned int timeout)
+vector<vector<bool> > up_simulation(const AutData& autData,
+                                    const unsigned int la,
+                                    const vector<vector<bool> >& param_rel, const bool param_strict,
+                                    const unsigned int n,
+                                    const unsigned int greatest_symbol, float *refinements,
+                                    timespec* timeout_start, unsigned int timeout)
 {
-    if (n==0)
-        return 0;
 
-    initializeW(aut, W, n);
-    bool* isFinal = getIsFinal2(aut,n);
+    if (refinements != NULL) *refinements = 0;
+
+    const Automaton& aut = getAut(autData);
+    const vector<typerank>& ranks = getRanks(autData);
+
+    vector<vector<bool> > W = createBoolMatrix(n,n,true);
+
+    if (n==0)
+        return W;
+
+    vector<bool> isFinal = getIsFinal(aut,n);
 
     auto start = std::chrono::high_resolution_clock::now();
     vector<vector<pair<transition,size_t>> > trans_botup = obtainTransBotUp(aut,n);
@@ -232,24 +243,27 @@ float up_simulation(const Automaton& aut, const unsigned int la,
 
     // Pre-refinement
     start = std::chrono::high_resolution_clock::now();
-    vector<vector<vector<unsigned int> > > post_len = getPostLen(trans_botup, n, numb_symbols, ranks);
-    W = pre_refine(W, aut, post_len, n, numb_symbols, timeout_start);
+    vector<vector<vector<unsigned int> > > post_len = getPostLen(trans_botup, n, greatest_symbol, ranks);
+    W = pre_refine(W, aut, post_len, n, greatest_symbol, getGreatestRank(ranks), timeout_start);
     elapsed = std::chrono::high_resolution_clock::now() - start;
-    float refin = refine(aut, isFinal, ranks, trans_botup, la, param_rel, param_strict,
+
+    float refinements_ = refine(aut, isFinal, ranks, trans_botup, la, param_rel, param_strict,
                          W, n, timeout_start, timeout);
+    if (refinements != NULL) *refinements = refinements_;
 
-    delete[] isFinal;
+    return W;
 
-    return refin;
 }
 
-float up_simulation_strict(const Automaton& aut, const unsigned int la, const vector<vector<bool> >& param_rel,
-                           const bool strict, vector<vector<bool> >& W, const unsigned int n,
-                           const unsigned int numb_symbols, const vector<typerank>& ranks,
-                           timespec* timeout_start, unsigned int timeout) {
-    float refin = up_simulation(aut, la, param_rel, strict, W, n, numb_symbols, ranks, timeout_start, timeout);
+vector<vector<bool> > up_simulation_strict(const AutData& autData, const unsigned int la,
+                                           const vector<vector<bool> >& param_rel, const bool strict,
+                                           const unsigned int n, const unsigned int numb_symbols,
+                                           float* refinements,
+                                           timespec* timeout_start, unsigned int timeout)
+{
+    vector<vector<bool> > W = up_simulation(autData, la, param_rel, strict, n, numb_symbols, refinements, /*ranks,*/ timeout_start, timeout);
 
-    extractStrictRelation(W, n);
+    extractStrictRelation(W);
 
-    return refin;
+    return W;
 }

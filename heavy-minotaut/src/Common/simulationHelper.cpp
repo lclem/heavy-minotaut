@@ -264,8 +264,11 @@ void initializeW(const Automaton& aut, vector<vector<bool> >& W,
 }
 
 /* Computes the transitive closure of a binary relation represented by the
- * boolean nxn matrix W. It uses Warshall's algorithm. */
-vector<vector<bool> > transClosure(vector<vector<bool> > W, const unsigned int n) {
+ * boolean matrix W. It uses Warshall's algorithm. */
+vector<vector<bool> > transClosure(vector<vector<bool> > W/*, const unsigned int n*/)
+{
+    unsigned int n = W.size();
+
     for (unsigned int p=0; p<n; p++)
         for (unsigned int q=0; q<n; q++)
             if (p!=q && W.at(q).at(p))
@@ -278,7 +281,7 @@ vector<vector<bool> > transClosure(vector<vector<bool> > W, const unsigned int n
 
 /* Computes the asymetric restriction of the transitive closure of W. */
 void asymTransClosure(vector<vector<bool> >& W, const unsigned int n) {
-    vector<vector<bool> > W_trans = transClosure(W,n);
+    vector<vector<bool> > W_trans = transClosure(W/*,n*/);
 
     for (unsigned int i=0; i<n; i++)
         for (unsigned int j=0; j <= i; j++)
@@ -290,7 +293,10 @@ void asymTransClosure(vector<vector<bool> >& W, const unsigned int n) {
 /* Extracts the strict subrelation of R. The function keeps in R only
  * those (x,y) s.t. xRy but not yRx.
  * Note: This is not the same as the asymmetric restriction of R. */
-void extractStrictRelation(vector<vector<bool> >& R, const unsigned int n) {
+void extractStrictRelation(vector<vector<bool> >& R)
+{
+    unsigned int n = R.size();
+
     for (unsigned int i=0; i<n; i++)
         for (unsigned int j=0; j<=i; j++)
             if (R.at(i).at(j) && R.at(j).at(i)) {
@@ -346,7 +352,8 @@ void convertBinaryRelToBoolMatrix(const Automaton& aut,
 
 }
 
-vector<transition> moveInitialTransitionsToBeginning(vector<transition>& vec) {
+vector<transition> moveInitialTransitionsToBeginning(vector<transition>& vec)
+{
     vector<transition> newVec;
     newVec.reserve(vec.size());
     for (vector<transition>::iterator it=vec.begin(); it!=vec.end(); it++)
@@ -445,8 +452,8 @@ vector<vector<bool> > generateIdRelation(const unsigned int n) {
     return W;
 }
 
-unsigned int getSizeOfRel(const vector<vector<bool> >& W, const unsigned int n) {
-    unsigned int c = 0;
+unsigned int getSizeOfRel(const vector<vector<bool> >& W) {
+    unsigned int c = 0, n = W.size();
 
     for (unsigned int i=0; i<n; i++)
         for (unsigned int j=0; j<n; j++)
@@ -455,7 +462,9 @@ unsigned int getSizeOfRel(const vector<vector<bool> >& W, const unsigned int n) 
     return c;
 }
 
-vector<pair<transition,size_t> >& vectorVectorPairTransitionIntAt(vector<vector<pair<transition,size_t>> >& vector, const state i) {
+vector<pair<transition,size_t> >& vectorVectorPairTransitionIntAt(vector<vector<pair<transition,size_t>> >& vector,
+                                                                  const state i)
+{
 
     try {
         return vector.at(i);
@@ -473,11 +482,11 @@ vector<pair<transition,size_t> >& vectorVectorPairTransitionIntAt(vector<vector<
 
 /* IO and String conversion functions */
 
-string w2String(const Automaton& aut, const vector<vector<bool> >& W, const unsigned int n, const stateDict *dict){
+string w2String(const Automaton& aut, const vector<vector<bool> >& W, const stateDict *dict){
     string str = "{";
 	
-	for (unsigned int i=0; i<n; i++)
-		for (unsigned int j=0; j<n; j++)
+    for (unsigned int i=0; i<W.size(); i++)
+        for (unsigned int j=0; j<W.size(); j++)
 			if (W.at(i).at(j))
                 str += "(" + (dict==NULL ? std::to_string(i) : translateState(aut,*dict,i)) + "," +
                              (dict==NULL ? std::to_string(j) : translateState(aut,*dict,j)) + ") ";
@@ -485,8 +494,8 @@ string w2String(const Automaton& aut, const vector<vector<bool> >& W, const unsi
     return str + "}";
 }
 
-void printW(const Automaton& aut, const vector<vector<bool> >& W, const unsigned int n, const stateDict *dict){
-    std::cout << w2String(aut, W, n, dict);
+void printW(const Automaton& aut, const vector<vector<bool> >& W, const stateDict *dict){
+    std::cout << w2String(aut, W, dict);
 }
 
 void printAttack(const Automaton& aut, Step& step) {

@@ -17,7 +17,6 @@
 
 #include <boost/variant/variant.hpp>
 #include <boost/variant/get.hpp>
-//#include <vata/explicit_tree_aut.hh>	/* The internal automata representation from libvata */
 
 #include "../Common/common.hh"
 #include "../Common/executionOptions.hh"
@@ -95,19 +94,19 @@ void extendAttack(vector<vector<Step*> >& steps, const unsigned int depth, vecto
 void printVectorVectorMaybeTransitions(const vector<vector<MaybeTransition> >&);
 typerank getRank(const symbol);
 void initializeW(const Automaton &aut, vector<vector<bool> >& W, const unsigned int n, const bool strict=false, const bool default_value=true);
-vector<vector<bool> > transClosure(vector<vector<bool> >, const unsigned int);
+vector<vector<bool> > transClosure(vector<vector<bool> >);
 void asymTransClosure(vector<vector<bool> >&, const unsigned int);
-void extractStrictRelation(vector<vector<bool> >&, const unsigned int);
+void extractStrictRelation(vector<vector<bool> >&);
 bool areInRel(state, state, const vector<vector<bool> >&);
 bool areInRelIter(const vector<state>&, const vector<state>&, const vector<vector<bool> >&, const bool);
 vector<vector<bool> > generateIdRelation(const unsigned int);
-unsigned int getSizeOfRel(const vector<vector<bool> >&, const unsigned int);
+unsigned int getSizeOfRel(const vector<vector<bool> >&/*, const unsigned int*/);
 vector<transition> moveInitialTransitionsToBeginning(vector<transition>& vec);
 vector<transition> orderTransBySymbolsRankings(vector<transition>& vec, const vector<typerank>& ranks);
 vector<pair<transition, size_t> > &vectorVectorPairTransitionIntAt(vector<vector<pair<transition, size_t> > > &, const state);
 void convertBinaryRelToBoolMatrix(const Automaton &aut, const stateDiscontBinaryRelation &binRel, vector<vector<bool> > &W);
-string w2String(const Automaton &aut, const vector<vector<bool> >&, const unsigned int numb_states, const stateDict* dict = NULL);
-void printW(const Automaton &aut, const vector<vector<bool> >&, const unsigned int, const stateDict* = NULL);
+string w2String(const Automaton &aut, const vector<vector<bool> >&, const stateDict* dict = NULL);
+void printW(const Automaton &aut, const vector<vector<bool> >&, const stateDict* = NULL);
 void printStateBinRelation(const stateDiscontBinaryRelation& binRel);
 void printAttack(const Automaton& aut, Step& step);
 

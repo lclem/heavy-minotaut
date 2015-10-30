@@ -19,7 +19,7 @@
 
 using std::vector;
 
-Automaton prune(Automaton& aut, const vector<vector<bool> >& rel1,
+AutData prune(const AutData& autData, const vector<vector<bool> >& rel1,
                 const vector<vector<bool> >& rel2, const bool flag_strictness);
 
 

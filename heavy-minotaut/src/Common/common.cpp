@@ -70,6 +70,14 @@ void printVectorVectorInts(const vector<vector<int> >& vec)
 	std::cout << vectorVectorIntsToString(vec) << "\n";
 }
 
+vector<vector<bool> > createBoolMatrix(unsigned int numb_rows, unsigned int numb_columns, bool cell_value)
+{
+    vector<bool> column(numb_rows,cell_value);
+    vector<vector<bool> > matrix(numb_columns,column);
+
+    return matrix;
+}
+
 string localTime()
 {
 
@@ -98,13 +106,12 @@ string localTime2()
 
 void writeToFile(string filename, string text, bool overwrite)
 {
+
     std::ofstream out;
     // std::ios::app is the open mode "append" meaning
     // new data will be written to the end of the file.
     out.open(filename, overwrite ? std::ios::trunc : std::ios::app);
     out << text;
-
-    //std::ofstream out(filename);
 
 }
 

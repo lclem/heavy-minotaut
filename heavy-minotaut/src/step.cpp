@@ -83,8 +83,8 @@ node_no Step::getNode()
 
 state Step::getState() const
 {
-    if (this->p == NO_STATE)
-        exit_with_error("Step::getState() called on a Step with no state.");
+    //if (this->p == NO_STATE)
+      //  exit_with_error("Step::getState() called on a Step with no state.");
 
     return this->p;
 }
@@ -232,8 +232,8 @@ string Step::toString()
     string str = "Step(p=" + std::to_string(this->p) + ", s=" + std::to_string(this->s)
                  + ", next=<";
 
-    symbol s = this->getSymbol();
-    if (s == NO_SYMBOL)
+    //symbol s = this->getSymbol();
+    if (/*s == NO_SYMBOL*/ this->next.empty())
         return str + ">)";
 
     unsigned int size = this->numbChildren();

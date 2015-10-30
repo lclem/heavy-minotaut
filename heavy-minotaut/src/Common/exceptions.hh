@@ -20,7 +20,7 @@
 
 using namespace std;
 
-using Automaton  =  VATA::ExplicitTreeAut;
+//using Automaton  =  VATA::ExplicitTreeAut;
 
 struct autHasNoLeafRules : public exception
 {
@@ -56,6 +56,6 @@ struct timeout_ : public exception
     }
 };
 
-void check_timeout(const Automaton &aut, timespec timeout_start, unsigned int timeout = 0);
+void check_timeout(const Automaton& aut, timespec timeout_start, unsigned int timeout = 0);
 
 #endif

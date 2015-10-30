@@ -52,14 +52,9 @@ bool attack_loop_pr(const Automaton& aut, const unsigned int numb_states,
                  unsigned int &codeGenerationTime, unsigned int &historiesTimeConsump, unsigned int &counter_normalAtks, unsigned int &counter_goodAtks, unsigned int &counter_badAtks,
                  timespec* timestart_timeout, unsigned int timeout = 0);
 
-float dw_simulation(const Automaton&, const unsigned int, vector<vector<bool> >&,
-                    const unsigned int, const vector<typerank> &ranks,
-                    timespec *timeout_start = NULL, unsigned int timeout = 0);
-
-void dw_ord_simulation_lvata(const Automaton& aut, vector<vector<bool> >& W, const unsigned int numb_states);
-
-void dw_ord_simulation_lvata_strict(const Automaton& aut, vector<vector<bool> >& W,
-                                    const unsigned int numb_states);
+vector<vector<bool> > dw_simulation(const AutData &autData, const unsigned int la,
+                                    float *refinements = NULL, bool use_lvata = true,
+                                    timespec *timeout_start = NULL, unsigned int timeout = 0);
 
 void pre_refine_lin(vector<vector<bool> >& W, const Automaton& aut,
                     const unsigned int depth,

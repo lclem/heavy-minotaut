@@ -14,7 +14,6 @@
 #include "../src/quotienting.hh"
 #include "../src/pruning.hh"
 
-#include "../testers/dw_simulation_tester.hh"
 #include "../testers/minimizationTechniques_tester.hh"
 
 

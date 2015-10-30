@@ -21,6 +21,37 @@ QueriesCounter counter_localGAH, counter_localBAH, counter_semiGlobalGAH, counte
 code CODE_DEL, CODE_DEL_POW;
 
 
+/* Calls libvata's algorithm for computing the ordinary dw simulation on the
+   given automaton, and converts the relation structure to a vector of vector of bools. */
+vector<vector<bool> > dw_ord_simulation_lvata(const AutData &autData)
+{
+
+    const Automaton& aut = getAut(autData);
+
+    unsigned int n = getGreatestUsedState(aut) + 1;     // new
+    stateDiscontBinaryRelation lv_sim = computeLVDwSimulation(aut, n);
+
+    vector<vector<bool> > W = createBoolMatrix(n,n,true);
+    initializeW(aut, W, n);
+
+    convertBinaryRelToBoolMatrix(aut, lv_sim, W);
+
+    return W;
+
+}
+
+vector<vector<bool> > dw_ord_simulation_lvata_strict(const AutData& autData)
+{
+
+    vector<vector<bool> > W = dw_ord_simulation_lvata(autData);
+
+    extractStrictRelation(W);
+
+    return W;
+
+}
+
+
 bool defend(const Automaton& aut, const unsigned int numb_states, const state initialState, Step& step, const state q,
             const vector<typerank>& ranks, const vector<vector<bool> >& W,
             vector<vector<set<code> > >& historyOfBadAtks_global, vector<vector<set<code> >>& historyOfGoodAtks_global,
@@ -135,7 +166,7 @@ bool defend(const Automaton& aut, const unsigned int numb_states, const state in
             for (unsigned int i=0; i<rank && ok; i++)
             {
                 Step next_i;
-                state q_i = NO_STATE;
+                state q_i = /*NO_STATE*/ 0;
                 try{
                     next_i = next.at(i);
                 }
@@ -175,7 +206,8 @@ bool defend(const Automaton& aut, const unsigned int numb_states, const state in
                 }
 
                 if (!defend(aut, numb_states, initialState, next_i, q_i, ranks, W,
-                            historyOfBadAtks_global, historyOfGoodAtks_global, codeGenerationTime, historiesTimeConsump, historyOfBadAtks_semi_global, historyOfGoodAtks_semi_global,
+                            historyOfBadAtks_global, historyOfGoodAtks_global, codeGenerationTime,
+                            historiesTimeConsump, historyOfBadAtks_semi_global, historyOfGoodAtks_semi_global,
                             timestart_timeout, timeout)){
                     ok = false;
 
@@ -270,17 +302,9 @@ bool attack(const Automaton& aut, const unsigned int numb_states, const state in
                        historyOfGoodAtks_semi_global, timestart_timeout, timeout);
     }
 
-    /* Check if timeout has been reached */
-//    unsigned int timeout_temp = (timeout==0) ? TIMEOUT : timeout;
-//    timespec nowTime;
-//    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &nowTime);
-//    if (nowTime.tv_sec - timestart_timeout->tv_sec > timeout_temp)
-//    {
-//        throw timeout_();
-//    }
-
     bool result_def;
-    if (depth > 0) {
+    if (depth > 0)
+    {
         result_def = defend(aut, numb_states, initialState, firstStepOf(steps), q,
                             ranks, W,
                             historyOfBadAtks_global, historyOfGoodAtks_global,
@@ -292,16 +316,19 @@ bool attack(const Automaton& aut, const unsigned int numb_states, const state in
     }
 
     vector<Step*> states;
-    try{
+    try
+    {
         states = steps.at(depth);
     }
-    catch (const std::out_of_range& oor) {
+    catch (const std::out_of_range& oor)
+    {
         std::cerr << "Out of Range error: " << oor.what();
         exit_with_error(" when acessing steps.");
     }
 
     transitions all_trans = mapGetTrans(aut, states);
-    if (all_trans.size() == 0) {
+    if (all_trans.size() == 0)
+    {
         if (depth == 0)
             return false;
         else
@@ -310,7 +337,7 @@ bool attack(const Automaton& aut, const unsigned int numb_states, const state in
 
     if (OPT[ORDER_OF_ATTACKS_TRANS] == SEMI_ORDERED_BY_INITIAL_TRANS)
     {
-        // sort each vector of trans in all_trans so that the trans (if any) to the initial state come first.
+        // Sort each vector of trans in all_trans so that the trans (if any) to the initial state come first.
         for (unsigned int i=0; i<all_trans.size(); i++)
         {
             vector<transition> vec = all_trans.at(i);
@@ -319,7 +346,7 @@ bool attack(const Automaton& aut, const unsigned int numb_states, const state in
     }
     else if (OPT[ORDER_OF_ATTACKS_TRANS] == SEMI_ORDERED_BY_SYMBOLS_RANKING)
     {
-        // sort each vector of trans in all_trans so that trans by symbols with higher rank come first.
+        // Sort each vector of trans in all_trans so that trans by symbols with higher rank come first.
         for (unsigned int i=0; i<all_trans.size(); i++)
         {
             vector<transition> vec = all_trans.at(i);
@@ -350,17 +377,6 @@ bool attack_loop(const Automaton& aut, const unsigned int numb_states,
                  float& codeGenerationTime, float& historiesTimeConsump,
                  timespec* timestart_timeout, unsigned int timeout = 0)
 {
-
-    /* Check if timeout has been reached */
-//    unsigned int timeout_temp = (timeout==0) ? TIMEOUT : timeout;
-//    timespec nowTime;
-//    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &nowTime);
-//    if (nowTime.tv_sec - timestart_timeout->tv_sec > timeout_temp)
-//    {
-//        throw timeout_();
-//    }
-
-    //check_timeout(*timestart_timeout, timeout);
 
     if (index == all_trans.size()) {
         extendAttack(steps, depth, combination, ranks);
@@ -410,16 +426,6 @@ float refine(const Automaton& aut, const state initialState,
                 for (state q=0; q<n; q++) {
                     visits++;
 
-//                    unsigned int timeout_temp = (timeout==0) ? TIMEOUT : timeout;
-//                    timespec nowTime;
-//                    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &nowTime);
-//                    if (nowTime.tv_sec - timestart_timeout->tv_sec > timeout_temp)
-//                    {
-//                        throw timeout_();
-//                    }
-
-                    //check_timeout(aut, *timestart_timeout, timeout);
-
                     if (!W[p][q] || q==p) {
                         /* False remains False, and W always includes the id relation. */
                         if (++counter == n*n) {
@@ -451,7 +457,8 @@ float refine(const Automaton& aut, const state initialState,
                             historiesTimeConsump += std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
                         }
                     }
-                    else {
+                    else
+                    {
                         if (++counter == n*n)
                             throw finished();
                     }
@@ -590,7 +597,7 @@ defence defend_with_3VL_V2(const Automaton& aut, const unsigned int numb_states,
             for (unsigned int i=0; i<rank; i++)
             {
                 Step next_i;
-                state q_i = NO_STATE;
+                state q_i = /*NO_STATE*/ 0;
                 try
                 {
                     next_i = next.at(i);
@@ -661,7 +668,7 @@ defence defend_with_3VL_V2(const Automaton& aut, const unsigned int numb_states,
 
                     if (isStrongFail(result_def))
                     {
-                         // The following 2 code lines appear to create a bottleneck.
+                         // The following 2 instructions appear to create a bottleneck when executed.
                          W[next_i.getState()][q_i] = false;
                          hasWChanged = true;
 
@@ -854,7 +861,7 @@ defence defend_with_3VL_V1(const Automaton& aut, const unsigned int numb_states,
             for (unsigned int i=0; i<rank; i++)
             {
                 Step next_i;
-                state q_i = NO_STATE;
+                state q_i = 0;
                 try
                 {
                     next_i = next.at(i);
@@ -1019,7 +1026,7 @@ bool attack_with_3VL(const Automaton& aut, const unsigned int numb_states,
 
     defence result_def = success;
     if (depth == la)
-    {		/* Then there is a successful attack of prefix 'steps' if it is 'steps' itself. */
+    {	/* Then there is a successful attack of prefix 'steps' if it is 'steps' itself. */
         if (OPT[THREE_VALUES_LOGIC] == ON_V1)
             result_def = defend_with_3VL_V1(aut, numb_states, initialState,
                                             firstStepOf(steps), q, isFinal, ranks,
@@ -1187,13 +1194,6 @@ float refine_with_3VL(const Automaton& aut, const state initialState,
                 for (state q=0; q<n; q++) {
                     visits++;
 
-//                    timespec nowTime;
-//                    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &nowTime);
-//                    if (nowTime.tv_sec - startTime.tv_sec > TIMEOUT)
-//                    {
-//                        throw timeout_();
-//                    }
-
                     check_timeout(aut, startTime);
 
                     if (!W[p][q] || q==p) {
@@ -1287,7 +1287,8 @@ void getPosts_for_pre_refine_lin(const Automaton& aut, vector<vector<unsigned in
     }
 }
 
-void getPosts_for_pre_refine_branch(const Automaton& aut, vector<vector<unsigned int> >& post_len, vector<vector<vector<vector<state> >>>& post) {
+void getPosts_for_pre_refine_branch(const Automaton& aut, vector<vector<unsigned int> >& post_len,
+                                    vector<vector<vector<vector<state> >>>& post) {
 
     for (const transition& trans : aut)
     {
@@ -1435,12 +1436,13 @@ void pre_refine_lin(vector<vector<bool> >& W, const Automaton& aut,
                     const vector<typerank>& ranks,
                     const state initialState)
 {
+
     auto start = std::chrono::high_resolution_clock::now();
 
     vector<unsigned int> vec_symbols(numb_symbols, 0);
     vector<vector<unsigned int> > post_len(numb_states, vec_symbols);
-    setGreatestRank(ranks);
-    vector<vector<state>> b(GREATEST_RANK);
+    typerank greatest_rank = getGreatestRank(ranks);
+    vector<vector<state>> b(greatest_rank);
     vector<vector<vector<state>>> a(numb_symbols,b);
     vector<vector<vector<vector<state>>>> post(numb_states,a);
     getPosts_for_pre_refine_lin(aut, post_len, post);
@@ -1468,6 +1470,7 @@ void pre_refine_lin(vector<vector<bool> >& W, const Automaton& aut,
     std::cout << "Pre-refine (with linear trees) with depth " << depth << " set " << counter
               << " entries to false and took " << time / (float) 1000000
               << "sec." << std::endl;
+
 }
 
 void pre_refine_lin_depth_2(vector<vector<bool> >& W, const Automaton& aut,
@@ -1480,7 +1483,7 @@ void pre_refine_lin_depth_2(vector<vector<bool> >& W, const Automaton& aut,
 
     vector<unsigned int> vec_symbols(numb_symbols, 0);
     vector<vector<unsigned int> > post_len(numb_states, vec_symbols);
-    vector<vector<state>> b(GREATEST_RANK);
+    vector<vector<state>> b(getGreatestRank(ranks));
     vector<vector<vector<state>>> a(numb_symbols,b);
     vector<vector<vector<vector<state>>>> post(numb_states,a);
     getPosts_for_pre_refine_lin(aut, post_len, post);
@@ -1508,7 +1511,8 @@ void pre_refine_lin_depth_2(vector<vector<bool> >& W, const Automaton& aut,
               << "sec." << std::endl;
 }
 
-/* defend for pre-refinement */
+/* defend for pre-refinement.
+ * Possible future optimizations are currently commented out. */
 bool defend_pr(const Automaton& aut, const unsigned int numb_states,const state initialState, Step& step, const state q,
                const vector<typerank>& ranks,
                /*vector<vector<set<code> > >& historyOfBadAtks_global, vector<vector<set<code> >>& historyOfGoodAtks_global,*/
@@ -1593,7 +1597,7 @@ bool defend_pr(const Automaton& aut, const unsigned int numb_states,const state 
             for (unsigned int i=0; i<rank && ok; i++)
             {
                 Step next_i;
-                state q_i = NO_STATE;
+                state q_i = 0;
                 try
                 {
                     next_i = next.at(i);
@@ -1654,10 +1658,12 @@ bool defend_pr(const Automaton& aut, const unsigned int numb_states,const state 
 //        //historiesTimeConsump += std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 //        //counter_globalGAH.incNumbInserts();
 //    }
+
     return false;
 }
 
-/* attack for pre-refinement. */
+/* attack for pre-refinement.
+ * Possible future optimizations are currently commented out. */
 bool attack_pr(const Automaton& aut, const unsigned int numb_states, const state initialState,
             vector<vector<Step*> >& steps, const state q, const unsigned int depth,
             const unsigned int depth_max, const vector<typerank>& ranks,
@@ -1722,7 +1728,8 @@ bool attack_pr(const Automaton& aut, const unsigned int numb_states, const state
 
 }
 
-/* attack_loop for pre-refinement. */
+/* attack_loop for pre-refinement.
+ * Possible future optimizations are currently commented out. */
 bool attack_loop_pr(const Automaton& aut, const unsigned int numb_states,
                  const state initialState,
                  const vector<typerank>& ranks, const unsigned int la,
@@ -1768,6 +1775,8 @@ bool attack_loop_pr(const Automaton& aut, const unsigned int numb_states,
     return false;
 }
 
+/* Implementation of the pre-refinement routine, using branching runs in the automaton.
+ * Possible future optimizations are currently commented out. */
 void pre_refine_branch(vector<vector<bool> >& W, const Automaton& aut,
                         const unsigned int depth,
                         const unsigned int numb_states,
@@ -1775,18 +1784,11 @@ void pre_refine_branch(vector<vector<bool> >& W, const Automaton& aut,
                         const state initialState,
                         timespec* timestart_timeout, unsigned int timeout) /* */
 {
+
     if (depth == 0)
         return;
 
     auto start = std::chrono::high_resolution_clock::now();
-
-    /*
-    vector<unsigned int> vec_symbols(numb_symbols, 0);
-    vector<vector<unsigned int> > post_len(numb_states,vec_symbols);
-    vector<vector<state>> vec_b;
-    vector<vector<vector<state>>> vec_a(numb_symbols,vec_b);
-    vector<vector<vector<vector<state>>>> post(numb_states,vec_a);
-    getPosts_for_pre_refine_branch(aut, post_len, post);*/
 
 //    std::set<code> set;
 //    vector<std::set<code>> column(numb_states,set);
@@ -1817,8 +1819,7 @@ void pre_refine_branch(vector<vector<bool> >& W, const Automaton& aut,
                 steps.resize(1);
                 steps.at(0) = s;
 
-                if (/*!can_imitate_branch(i, j, depth, post_len, post, numb_symbols)*/
-                        attack_pr(aut, numb_states, initialState, steps, j, 0, depth, ranks,
+                if (attack_pr(aut, numb_states, initialState, steps, j, 0, depth, ranks,
                                   /*historyOfBadAtks_global, historyOfGoodAtks_global,*/ codeGenerationTime, historiesTimeConsump,
                                   counter_normalAtks, counter_goodAtks, counter_badAtks, timestart_timeout, timeout) )
                 {
@@ -1880,11 +1881,19 @@ unsigned int good_pr_depth_heur(const Automaton& aut, unsigned int la)
     return result;
 }
 
-float dw_simulation(const Automaton& aut, const unsigned int la,
-                    vector<vector<bool> >& W, const unsigned int n,
-                    const vector<typerank>& ranks,
-                    timespec* timeout_start, unsigned int timeout)
+vector<vector<bool> > dw_simulation(const AutData& autData, const unsigned int la,
+                                    float *refinements, bool use_lvata, timespec* timeout_start, unsigned int timeout)
 {
+
+    if (refinements != NULL) *refinements = 0;
+
+    if (la == 1 && use_lvata)   /* libvata's implementation of ordinary sim. is faster than ours. */
+        return dw_ord_simulation_lvata(autData);
+
+    const Automaton& aut          = getAut(autData);
+    const vector<typerank>& ranks = getRanks(autData);
+    unsigned int n                = getGreatestUsedState(aut)+1;
+    vector<vector<bool> > W       = createBoolMatrix(n,n,true);
 
     counter_localGAH      = QueriesCounter();
     counter_localBAH      = QueriesCounter();
@@ -1894,20 +1903,20 @@ float dw_simulation(const Automaton& aut, const unsigned int la,
     counter_globalBAH     = QueriesCounter();
 
     if (n==0)
-        return 0;
+        return W;
 
     initializeW(aut, W, n);
 
     vector<bool> isFinal     = getIsFinal(aut,n);
     const state initialState = getInitialState(aut);
 
-    // Pre-refinement
+    /* Pre-refinement */
     //pre_refine_branch(W, aut, 2, n, m, initialState, timeout_start, timeout);
     //pre_refine_lin(W, aut, pr_depth, n, m, ranks, initialState);
-    //pr_depth = good_pr_depth_heur(aut,la);
-    //pre_refine_branch(W, aut, pr_depth, n, ranks, initialState, timeout_start, timeout);
+    pr_depth = good_pr_depth_heur(aut,la);
+    pre_refine_branch(W, aut, pr_depth, n, ranks, initialState, timeout_start, timeout);
 
-    // Define the (global) histories of attacks
+    /* Define the (global) histories of attacks. */
     std::set<code> set;
     vector<std::set<code>> column(n,set);
     vector<vector<std::set<code>> > historyOfGoodAtks_global(n,column);
@@ -1921,51 +1930,41 @@ float dw_simulation(const Automaton& aut, const unsigned int la,
 
     float codeGenerationTime = 0, historiesTimeConsump = 0;
 
-    float answer;
+    float refinements2 = 0.0;
     if (OPT[THREE_VALUES_LOGIC] == ON_V1 || OPT[THREE_VALUES_LOGIC] == ON_V2)
-        answer = refine_with_3VL(aut, initialState, isFinal, ranks, la, W, n,
+        refinements2 = refine_with_3VL(aut, initialState, isFinal, ranks, la, W, n,
                                  historyOfBadAtks_global_3VL,
                                  historyOfGoodAtks_global_3VL,
                                  codeGenerationTime, historiesTimeConsump);
     else
-        answer = refine(aut, initialState, ranks, la, W, n,
+        refinements2 = refine(aut, initialState, ranks, la, W, n,
                         historyOfBadAtks_global, historyOfGoodAtks_global,
                         codeGenerationTime, historiesTimeConsump,
                         timeout_start, timeout);
 
+    if (refinements != NULL) *refinements = refinements2;
 
-    if (OPT[TYPE_OF_HISTORY_OF_GOOD_ATKS]==GLOBAL    || OPT[TYPE_OF_HISTORY_OF_BAD_ATKS]==GLOBAL
-     || OPT[TYPE_OF_HISTORY_OF_GOOD_ATKS]==GLOBAL_V2 || OPT[TYPE_OF_HISTORY_OF_BAD_ATKS]==GLOBAL_V2 )
-    {
-        std::cout << "The code generation for the history structures took in total " << codeGenerationTime   / (float) 1000000 << " sec.\n";
-        std::cout << "The inserts/lookups/clearings in the history structures took in total " << historiesTimeConsump / (float) 1000000 << " sec.\n";
-    }
+    if (dbg)    /* Debugging prints. */
+        if (OPT[TYPE_OF_HISTORY_OF_GOOD_ATKS]==GLOBAL    || OPT[TYPE_OF_HISTORY_OF_BAD_ATKS]==GLOBAL
+         || OPT[TYPE_OF_HISTORY_OF_GOOD_ATKS]==GLOBAL_V2 || OPT[TYPE_OF_HISTORY_OF_BAD_ATKS]==GLOBAL_V2 )
+        {
+            std::cout << "The code generation for the history structures took in total " << codeGenerationTime   / (float) 1000000 << " sec.\n";
+            std::cout << "The inserts/lookups/clearings in the history structures took in total " << historiesTimeConsump / (float) 1000000 << " sec.\n";
+        }
 
-    return answer;
+    return W;
+
 }
 
-float dw_simulation_strict(const Automaton& aut, const unsigned int la,
-                           vector<vector<bool> >& W, const unsigned int n,
-                           const vector<typerank>& ranks)
+vector<vector<bool> > dw_simulation_strict(const AutData& autData, const unsigned int la,
+                                           float* refinements = NULL, bool use_lvata = true)
 {
-    float refin = dw_simulation(aut, la, W, n, ranks);
 
-    extractStrictRelation(W, n);
-    return refin;
-}
+    vector<vector<bool> > W = dw_simulation(autData, la, refinements, use_lvata);
 
-/* Calls libvata's algorithm for computing the ordinary dw simulation on the
-   given automaton, and converts the relation structure to a vector of vector of bools. */
-void dw_ord_simulation_lvata(const Automaton& aut, vector<vector<bool> >& W, const unsigned int numb_states)
-{
-    stateDiscontBinaryRelation lv_sim = computeLVDwSimulation(aut, numb_states);
-    initializeW(aut, W, numb_states);
-    convertBinaryRelToBoolMatrix(aut, lv_sim, W);
-}
+    extractStrictRelation(W);
 
-void dw_ord_simulation_lvata_strict(const Automaton& aut, vector<vector<bool> >& W, const unsigned int numb_states)
-{
-    dw_ord_simulation_lvata(aut, W, numb_states);
-    extractStrictRelation(W, numb_states);
+    return W;
+
 }
 

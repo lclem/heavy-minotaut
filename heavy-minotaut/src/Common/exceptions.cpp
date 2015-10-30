@@ -12,8 +12,9 @@
 
 #include "exceptions.hh"
 
-void check_timeout(const Automaton& aut, timespec timeout_start, unsigned int timeout)
+void check_timeout(const Automaton &aut, timespec timeout_start, unsigned int timeout)
 {
+
     unsigned int timeout_temp = timeout==0 ? TIMEOUT : timeout;
 
     timespec nowTime;
@@ -21,7 +22,7 @@ void check_timeout(const Automaton& aut, timespec timeout_start, unsigned int ti
 
     if (nowTime.tv_sec - timeout_start.tv_sec > timeout_temp)
     {
-        // outputText(std::to_string(nowTime.tv_sec - timeout_start.tv_sec) + " have passed -> TIMEOUT. "); Uncomment to help fine tune the timeout interruption.
+        // outputText(std::to_string(nowTime.tv_sec - timeout_start.tv_sec) + " have passed -> TIMEOUT. "); Uncomment to help fine tune how often to check the timeout.
         throw timeout_(aut);
     }
 

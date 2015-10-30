@@ -77,8 +77,8 @@ class Step
         node_no EMPTY_NODE = "";
         node_no node = EMPTY_NODE;
         code c = EMPTY_CODE;
-        state p = NO_STATE;
-        symbol s = NO_SYMBOL;
+        state p = /*NO_STATE*/ 0;
+        symbol s = /*NO_SYMBOL*/ 0;
         vector<Step> next;
         Step* parent = NULL;
         int index = NONE;           /* Only useful in up simulations: if parent!=NULL, index will be the    */
