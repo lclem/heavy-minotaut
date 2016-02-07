@@ -41,7 +41,6 @@ namespace VATA
 class VATA::Util::BinaryRelation
 {
 
-public:
 	std::vector<bool> data_;
 	size_t rowSize_;
 	size_t size_;
@@ -365,7 +364,7 @@ public:
 	 * elements to their images (in @p ind) and their co-images (in @p inv).
 	 *
 	 * @param[out]  ind  The result mapping every element to its images
-	 * @param[out]  ind  The result mapping every element to its co-images
+	 * @param[out]  inv  The result mapping every element to its co-images
 	 *
 	 * @see buildIndex buildInvIndex
 	 */
@@ -878,7 +877,9 @@ public:   // methods
 
 	bool get(size_t row, size_t column) const
 	{
-		return rel_.get(transl_.at(row), transl_.at(column));
+		size_t rowTransl = transl_.at(row);
+		size_t colTransl = transl_.at(column);
+		return rel_.get(rowTransl, colTransl);
 	}
 
 	void set(size_t row, size_t column, bool value)
@@ -930,16 +931,6 @@ public:   // methods
 			if (!inserted)  assert(false);
 		}
 	}
-
-    const BinaryRelation& getMatrix() const
-    {
-        return rel_;
-    }
-
-    const DictType& getDict() const
-    {
-           return dict_;
-    }
 
 };
 
