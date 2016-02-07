@@ -32,6 +32,7 @@
 
 INCLUDE=-Iinclude/
 INCLUDE_LVATA=-I../ondrik-libvata/include
+INCLUDE_BOOST=-I~/Desktop/boost/
 LIBS_ADD=-L../ondrik-libvata/build/src
 LIBS=-lvata
 SRCS= $(wildcard src/*.cpp) $(wildcard src/*\/*.cpp) $(wildcard src/*\/*\/*.cpp)  # depth = 3
@@ -51,13 +52,13 @@ all: clean minotaut
 # Add -g for debugging (enables symbols) and also -O0
 
 minotaut: $(OBJS) $(OBJS_TESTERS)
-	g++ -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $^ $(LIBS_ADD) $(LIBS) -o $@
+	g++ -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $(INCLUDE_BOOST) $^ $(LIBS_ADD) $(LIBS) -o $@
 
 build/testers/%.o: testers/%.cpp 
-	g++ -c -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $< -o $@
+	g++ -c -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $(INCLUDE_BOOST) $< -o $@
 
 build/%.o: src/%.cpp 
-	g++ -c -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $< -o $@
+	g++ -c -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $(INCLUDE_BOOST) $< -o $@
 
 delete_objs:
 	$(RM) $(OBJS) $(OBJS_TESTERS)

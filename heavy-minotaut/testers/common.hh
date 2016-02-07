@@ -3,7 +3,7 @@
  *                                  Heavy MinOTAut                  				*
  *              - heavy minimization algorithms for tree automata					*
  *                                                                                  *
- * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 		Copyright (c) 2014-16	Ricardo Almeida	(LFCS - University of Edinburgh)	*
  * 																					*
  *	Description:																	*
  * 		Header file declaring auxiliary functions for the execution of              *
@@ -21,9 +21,11 @@
 
 vector<filename> getAllFilenames(const vector<string>& dirs);
 vector<filename> getAllFilenames(const string dir);
+vector<string> getAllSubFilenames(string directory_str);
 vector<string> getAllSubfolders(const string folder_str);
 string appendTimbukFilename(string filename, string sufix);
 string getLocalFilename(const string filename);
+string sanitizeDirStr(string dir_str);
 
 
 #endif // COMMON_H
