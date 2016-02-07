@@ -3,7 +3,7 @@
  *                                  Heavy MinOTAut                  				*
  *              - heavy minimization algorithms for tree automata					*
  *                                                                                  *
- * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 		Copyright (c) 2014-16	Ricardo Almeida	(LFCS - University of Edinburgh)	*
  * 																					*
  *	Description:																	*
  * 		Header file for a collection of utility functions which aid in the          *
@@ -68,17 +68,18 @@ public:
     }
 };
 
-const static bool areMapsOrdered = /*true*/ false;
-/* This would be a way of doing dependent typdefs with a const condition. */
+const bool areMapsOrdered = true /*false*/;
 typedef std::conditional<areMapsOrdered,
                          map<node_no,defence>,
-                         unordered_map<node_no,defence>>::type nodes_map;
+                         unordered_map<node_no,defence>>::type nodes_map; /* Used in SG Hist */
 typedef std::conditional<areMapsOrdered,
                          map<code,defence>,
-                         unordered_map<code,defence>>::type codes_map;
+                         unordered_map<code,defence>>::type codes_map; /* Used in Global Hist */
 
 
 extern defence success, fail, strong_fail, weak_fail;
+/* 2VL uses 'success' and 'fail'.
+ * 3VL uses 'success', 'weak_fail' and 'strong_fail'. */
 
 bool isSuccess(defence def);
 bool isStrongFail(defence def);

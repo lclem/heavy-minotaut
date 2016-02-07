@@ -3,7 +3,7 @@
  *                                  Heavy MinOTAut                  				*
  *              - heavy minimization algorithms for tree automata					*
  *                                                                                  *
- * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 		Copyright (c) 2014-16	Ricardo Almeida	(LFCS - University of Edinburgh)	*
  * 																					*
  *	Description:																	*
  * 		Implementation file defining global variables for some of the               *
@@ -41,8 +41,8 @@ void startOPT() {
     OPT.resize(number_of_opts);
 
     OPT[ORDER_OF_ATTACKS_TRANS]       = /*SEMI_ORDERED_BY_SYMBOLS_RANKING;*/ NO_PARTICULAR_ORDER; /*SEMI_ORDERED_BY_INITIAL_TRANS;*/
-    OPT[TYPE_OF_HISTORY_OF_GOOD_ATKS] = /*GLOBAL_V2;*/ /*GLOBAL;*/ SEMI_GLOBAL; /*LOCAL;*/ /*NONE;*/
-    OPT[TYPE_OF_HISTORY_OF_BAD_ATKS]  = /*GLOBAL_V2;*/ /*GLOBAL;*/ SEMI_GLOBAL; /*LOCAL;*/ /*NONE;*/
+    OPT[TYPE_OF_HISTORY_OF_GOOD_ATKS] = /*GLOBAL_V2;*/ /*GLOBAL;*/ /*SEMI_GLOBAL;*/ /*LOCAL;*/ NONE;
+    OPT[TYPE_OF_HISTORY_OF_BAD_ATKS]  = /*GLOBAL_V2;*/ /*GLOBAL;*/ /*SEMI_GLOBAL;*/ /*LOCAL;*/ NONE;
     OPT[THREE_VALUES_LOGIC]           = OFF /*ON_V1*/ /*ON_V2*/;
     OPT[WEAK_ACCEPTANCE_COND]         = /*ON*/  OFF;
 }

@@ -3,7 +3,7 @@
  *                                  Heavy MinOTAut                  				*
  *              - heavy minimization algorithms for tree automata					*
  *                                                                                  *
- * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 		Copyright (c) 2014-16	Ricardo Almeida	(LFCS - University of Edinburgh)	*
  * 																					*
  *	Description:																	*
  * 		Implementation of a collection of functions that aid in the manipulation    *
@@ -63,6 +63,32 @@ Automaton removeInitialState(const Automaton& old_aut)
     return new_aut;
 }
 
+/* Reindex the states if they are not continuous, e.g.: states = {0,2,5} becomes {0,1,2}.
+ * This function was implemented with the aim of being used in between steps that delete states in the automaton,
+ * namely Quotienting and Pruning techniques. However, calling it then turned out to make the overall execution slower. */
+AutData reindexStates(const AutData& oldAutData)
+{
+
+    unsigned int greatestState = getGreatestUsedState(oldAutData);
+    if (getNumbUsedStates(oldAutData) == greatestState+1)
+        return oldAutData;     /* The states are already continuous. */
+
+    Automaton aut = removeInitialState(getAut(oldAutData));
+
+    state stateCnt = 0;
+    stateToStateMap stateMap;
+    stateToStateTranslWeak stateTransl(stateMap,
+                                      [&stateCnt](const state&){return stateCnt++;});
+
+    aut = aut.ReindexStates(stateTransl);
+
+    aut = addInitialState(aut);
+
+    AutData newAutData = wrapAutData(aut, getRanks(oldAutData));
+
+    return newAutData;
+}
+
 AutData removeUselessStates(const AutData& old_autData)
 {
     Automaton old_aut = getAut(old_autData);
@@ -83,9 +109,23 @@ string removeAlphabetLine(string autStr)
     return prefix + rest;
 }
 
+set<symbol> getUsedSymbols(const Automaton& aut)
+{
+    //vector<symbol> symbols;
+    set<symbol> symbols;
+
+    for (const lv_transition& trans : aut)
+    {
+        symbols.insert(trans.GetSymbol());
+    }
+
+    return symbols;
+}
+
 vector<typerank> getRanks(const Automaton& aut)
 {
-    unsigned int greatest_symbol = getGreatestUsedSymbol(aut);
+    set<symbol> symbols = getUsedSymbols(aut);
+    unsigned int greatest_symbol = getGreatestUsedSymbol(aut);  // Could be improved.
     vector<typerank> ranks(greatest_symbol+1);  /* This alloc guarantees we keep the ranks for all symbs, */
                                                 /* even if their int representation is not continuous.    */
 
@@ -98,26 +138,30 @@ vector<typerank> getRanks(const Automaton& aut)
         assert(false);
     }
 
-    typerank rank;
     symbol s;
+    typerank rank;
     for (auto stringSymbolPair : alph->GetSymbolDict())
     {
         s = stringSymbolPair.second;
+        if (symbols.find(s) == symbols.end())
+            continue;
         rank = stringSymbolPair.first.rank;
         if (rank==0) rank = 1;      /* Since we make the initial state explicit. */
-        ranks[s] = rank;
+        ranks.at(s) = rank;
+        if (s > greatest_symbol)
+            outputText("Oh no");
     }
 
     return ranks;
 }
 
 
-AutData parseFromString(string autStr, stateDict& stateDict, bool flag_removeUseless=true, bool flag_removeUnreachable=true)
+AutData parseFromString(string autStr, stateDict& stateDict)
 {
     /* Parsing the automaton. */
     std::unique_ptr<VATA::Parsing::AbstrParser> parser(new VATA::Parsing::TimbukParser());
 
-    autStr = removeAlphabetLine(autStr);
+    //autStr = removeAlphabetLine(autStr);
 
     Automaton aut;
     Automaton::AlphabetType onTheFlyAlph(new Automaton::OnTheFlyAlphabet);
@@ -126,15 +170,54 @@ AutData parseFromString(string autStr, stateDict& stateDict, bool flag_removeUse
 
     aut = addInitialState(aut);
 
-    if (flag_removeUseless)
-        aut = aut.RemoveUselessStates();  // Warning: there is the assumption that final states are never useless, so this never deletes them
-    if (flag_removeUnreachable)
-        aut = aut.RemoveUnreachableStates();
-
     /* Getting the ranks of the symbols. */
     vector<typerank> ranks = getRanks(aut);
 
-    return (AutData (aut,ranks));
+    AutData autData = AutData (aut,ranks);
+
+    return autData;
+}
+
+Automaton parseFromString2(string autStr, stateDict& stateDict, vector<typerank>& ranks)
+{
+    /* Parsing the automaton. */
+    std::unique_ptr<VATA::Parsing::AbstrParser> parser(new VATA::Parsing::TimbukParser());
+
+    //autStr = removeAlphabetLine(autStr);
+
+    Automaton aut;
+    Automaton::AlphabetType onTheFlyAlph(new Automaton::OnTheFlyAlphabet);
+    aut.SetAlphabet(onTheFlyAlph);
+    aut.LoadFromString(*parser, autStr, stateDict);
+
+    aut = addInitialState(aut);
+
+    /* Getting the ranks of the symbols. */
+    ranks = getRanks(aut);
+
+    return aut;
+}
+
+AutData parseFromFile(string filename, stateDict& stateDict)
+{
+    return parseFromString(VATA::Util::ReadFile(filename), stateDict);
+}
+
+/* Note that this function REWRITES the output automaton if a file with the same same already exists! */
+void saveToFile(const Automaton& aut, string filename, bool removeInitialSt)
+{
+    Automaton aut_;
+    if (removeInitialSt)
+        aut_ = removeInitialState(aut);
+    else
+        aut_ = aut;
+
+    writeToFile(filename, autToStringTimbuk(aut_), true);
+}
+
+void saveToFile(const AutData& autData, string filename, bool removeInitialSt)
+{
+    saveToFile(getAut(autData), filename, removeInitialSt);
 }
 
 const Automaton &getAut(const AutData &autData)
@@ -152,35 +235,6 @@ AutData wrapAutData(const Automaton& aut, const vector<typerank>& ranks)
 {
     return AutData (aut,ranks);
 }
-
-/* [The ReindexStates method from libvata apperas to not be working properly,
- * therefore the present function is commented out for now.]
- * Reindex the states if they are not continuous.
- * E.g.: states = {0,1,3}.  */
-//AutData reindexStates(AutData& autData)
-//{
-
-//    unsigned int greatestState = getGreatestUsedState(autData);
-//    if (getNumbUsedStates(autData) == greatestState+1)
-//        return autData;     /* The states are already continuous. */
-//    else if (getNumbUsedStates(autData) > greatestState+1)
-//        return reindexStates(autData);
-
-//    Automaton aut = removeInitialState(getAut(autData));
-
-//    state stateCnt = 0;
-//    stateToStateMap stateMap;
-//    stateToStateTranslWeak stateTransl(stateMap,
-//                                      [&stateCnt](const state&){return stateCnt++;});
-
-//    aut = aut.ReindexStates(stateTransl);
-
-//    aut = addInitialState(aut);
-
-//    return wrapAutData(aut, getRanks(autData));
-
-//}
-
 
 vector<unsigned int> mapGetNumbTrans(const vector<vector<transition> >& vec) {
     unsigned int size = vec.size();
@@ -221,21 +275,36 @@ stateSet getUsedStates(const Automaton& aut)
     return states;
 }
 
-unsigned int getNumbUsedStates(const Automaton& aut)
+unsigned int getNumbUsedStates(const Automaton& aut, bool ignoreInitialSt)
 {
-    return getUsedStates(aut).size();
+    if (ignoreInitialSt && getNumbUsedStates(aut) > 0)
+        return getUsedStates(aut).size()-1;
+    else
+        return getUsedStates(aut).size();
 }
 
-unsigned int getNumbUsedStates(const AutData& autData)
+unsigned int getNumbUsedStates(const AutData& autData, bool ignoreInitialSt)
 {
-    return getUsedStates(getAut(autData)).size();
+    return getNumbUsedStates(getAut(autData), ignoreInitialSt);
 }
 
-float getTransitionDensity(const Automaton& aut)
+string getNumbUsedStates_str(const AutData& autData, bool ignoreInitialSt)
+{
+    return std::to_string(getNumbUsedStates(autData, ignoreInitialSt));
+}
+
+string getNumbUsedStates_str(const Automaton& aut, bool ignoreInitialSt)
+{
+    return std::to_string(getNumbUsedStates(aut, ignoreInitialSt));
+}
+
+float getTransitionDensity(const Automaton& aut, bool ignoreLeafRules)
 {
     float transDens = 0;
 
-    unsigned int numb_states = getNumbUsedStates(aut), numb_transitions = getNumbTransitions(aut), numb_symbols = getNumbSymbols(aut);
+    unsigned int numb_states = getNumbUsedStates(aut, ignoreLeafRules);
+    unsigned int numb_transitions = getNumbTransitions(aut, ignoreLeafRules);
+    unsigned int numb_symbols = getNumbSymbols(aut, ignoreLeafRules);
 
     if (numb_states == 0 || numb_symbols == 0)
         transDens = 0;
@@ -243,6 +312,16 @@ float getTransitionDensity(const Automaton& aut)
         transDens = (float) numb_transitions / ((float) numb_states * (float) numb_symbols);
 
     return transDens;
+}
+
+float getTransitionDensity(const AutData& autData, bool ignoreLeafRules)
+{
+    return getTransitionDensity(getAut(autData), ignoreLeafRules);
+}
+
+string getTransitionDensity_str(const Automaton& aut, bool ignoreLeafRules)
+{
+    return std::to_string(getTransitionDensity(aut, ignoreLeafRules));
 }
 
 vector<bool> getIsFinal(const Automaton& aut, const unsigned int n) {
@@ -267,9 +346,14 @@ bool* getIsFinal2(const Automaton& aut, const unsigned int n) {
     return isFinal;
 }
 
+unsigned int getNumbLeafSymbols(const Automaton& aut)
+{
+    return (getLeafSymbols(aut)).size();
+}
+
 /* Returns the number of symbols in the alphabet of the automaton.
  * This function appears to not always work correctly. */
-unsigned int getNumbSymbols(const Automaton& aut)
+unsigned int getNumbSymbols(const Automaton& aut, bool ignoreLeafSymbols)
 {
     unordered_set<symbol> symb;
     for (const transition& trans : aut)
@@ -277,7 +361,10 @@ unsigned int getNumbSymbols(const Automaton& aut)
 
     unsigned int numb = symb.size();
 
-    return numb;
+    if (ignoreLeafSymbols)
+        return numb - getNumbLeafSymbols(aut);
+    else
+        return numb;
 }
 
 float getAvgRank(const Automaton& aut)
@@ -332,6 +419,7 @@ state getGreatestUsedState(const AutData& aut)
 
 }
 
+
 symbol getGreatestUsedSymbol(const Automaton& aut)
 {
     symbol s=0;
@@ -340,7 +428,6 @@ symbol getGreatestUsedSymbol(const Automaton& aut)
     {
         if (trans.GetSymbol() > s)
             s = trans.GetSymbol();
-
     }
 
     return s;
@@ -348,9 +435,7 @@ symbol getGreatestUsedSymbol(const Automaton& aut)
 
 symbol getGreatestUsedSymbol(const AutData& autData)
 {
-
     return getGreatestUsedSymbol(getAut(autData));
-
 }
 
 /* Returns a vector that at each index i contains a vector of pairs:
@@ -397,6 +482,21 @@ bool langIsEmpty(const Automaton& aut)
     return equiv(empty,aut);
 }
 
+Automaton complement(const Automaton& aut1)
+{
+    Automaton aut1_ = removeInitialState(aut1);
+    Automaton aut2  = aut1_.Complement();
+
+    //equiv(aut1, aut1);
+
+    return addInitialState(aut2);
+}
+
+AutData complement(const AutData& autData)
+{
+    return wrapAutData(complement(getAut(autData)), getRanks(autData));
+}
+
 state getInitialState(const Automaton& aut)
 {
     return getGreatestUsedState(aut);
@@ -437,20 +537,31 @@ stateExt translateState(const Automaton& aut, const stateDict& dict, const state
 }
 
 /* Returns the number of transitions in the given automaton */
-unsigned int getNumbTransitions(const Automaton& aut)
+unsigned int getNumbTransitions(const Automaton& aut, bool ignoreLeafRules)
 {
     unsigned int c = 0;
     for (const lv_transition trans : aut)
         c++;
 
-    return c;
+    if (ignoreLeafRules)
+        return c - getNumbLeafTransitions(aut);
+    else
+        return c;
 }
 
-unsigned int getNumbTransitions(const AutData& autData)
+unsigned int getNumbTransitions(const AutData& autData, bool ignoreLeafRules)
 {
+    return getNumbTransitions(getAut(autData), ignoreLeafRules);
+}
 
-    return getNumbTransitions(getAut(autData));
+string getNumbTransitions_str(const AutData& autData, bool ignoreLeafRules)
+{
+    return std::to_string(getNumbTransitions(autData,ignoreLeafRules));
+}
 
+string getNumbTransitions_str(const Automaton& aut, bool ignoreLeafRules)
+{
+    return std::to_string(getNumbTransitions(aut,ignoreLeafRules));
 }
 
 unsigned int getNumbLeafTransitions(const Automaton& aut)
@@ -468,6 +579,25 @@ unsigned int getNumbLeafTransitions(const Automaton& aut)
     }
 
     return c;
+}
+
+vector<symbol> getLeafSymbols(const Automaton& aut)
+{
+    vector<symbol> leaf_symbols;
+    state initialState = getInitialState(aut);
+    // This assumes that the explicit initial state has been added to the automaton,
+    // which necessarily happens except when the input automaton had no leaf-rules
+    // (in such a case, discarding the automaton is advisable).
+    vector<state> initial_state_children = {initialState};
+    for (const lv_transition& trans : aut)
+    {
+        if (trans.GetChildren() == initial_state_children)
+            leaf_symbols.push_back(trans.GetSymbol());
+    }
+
+    //leaf_symbols.
+
+    return removeDuplicates(leaf_symbols);
 }
 
 /* Computes a copy of the given automaton. This will be a full copy if
@@ -564,7 +694,7 @@ bool statesIntersect(const vector<state>& vec1, const vector<state>& vec2)
     return (std::find_first_of(vec1.begin(), vec1.end(), vec2.begin(), vec2.end()) != vec1.end());
 }
 
-bool foo(const vector<state>& vec1, const vector<state>& vec2)
+bool measureTO_aux(const vector<state>& vec1, const vector<state>& vec2)
 {
     if (vec1.size() != vec2.size())
         exit_with_error("Function foo received two vectors of different size.\n");
@@ -593,15 +723,15 @@ vector<float> measureTransOverlaps(const Automaton& aut)
         {
             if (trans2==trans1)
                 continue;
-            if (trans1.GetParent()==trans2.GetParent() && trans1.GetSymbol()==trans2.GetSymbol() && foo(trans1.GetChildren(), trans2.GetChildren()))
+            if (trans1.GetParent()==trans2.GetParent() && trans1.GetSymbol()==trans2.GetSymbol() && measureTO_aux(trans1.GetChildren(), trans2.GetChildren()))
             {
                 transWhichOverlap.insert(trans2);
             }
         }
     }
 
-    unsigned int numb_transitions = getNumbTransitions(aut);
-    float numb_transWhichOverlap = ((float) transWhichOverlap.size() / (float) numb_transitions) * (float) 100;
+    unsigned int numb_transitions = getNumbTransitions(aut, true);
+    float avg_transWhichOverlap = ((float) transWhichOverlap.size() / (float) numb_transitions) * (float) 100;
 
     float avg = 0, n = 0;
     for (std::set<transition>::iterator it1=transWhichOverlap.begin(); it1!=transWhichOverlap.end(); ++it1)
@@ -660,41 +790,80 @@ vector<float> measureTransOverlaps(const Automaton& aut)
         avg = 0;
     float avg2 = avg;
 
-    vector<float> result = {numb_transWhichOverlap, avg1, avg2};
+    vector<float> result = {avg_transWhichOverlap, avg1, avg2};
 
     return result;
 }
 
+vector<float> measureTransOverlaps(const AutData& autData)
+{
+    return measureTransOverlaps(getAut(autData));
+}
+
+string measureTransOverlaps_str2Dec(const Automaton& aut)
+{
+    vector<float> overlaps = measureTransOverlaps(aut);
+    return "(" + convert2DecStr(overlaps.at(0)) + ", " +
+            convert2DecStr(overlaps.at(1)) + ", " +
+            convert2DecStr(overlaps.at(2)) + ")";
+}
+
+string measureTransOverlaps_str2Dec(const AutData& autData)
+{
+    return measureTransOverlaps_str2Dec(getAut(autData));
+}
+
 /* Returns the value of numbStates(smaller) / numbStates(larger) in %. */
-float measureStatesReduction(const Automaton& smaller, const Automaton& larger)
+float measureStatesReduction(const Automaton& smaller, const Automaton& larger, bool ignoreInitialSt)
 {
     float states_red;
 
-    if (getNumbUsedStates(larger) == 0)
+    if (getNumbUsedStates(larger,ignoreInitialSt) == 0)
         states_red = 100;
     else
-        states_red = ((float) getNumbUsedStates(smaller)
-                      / (float) getNumbUsedStates(larger)) * (float) 100;
+        states_red = ((float) getNumbUsedStates(smaller,ignoreInitialSt)
+                      / (float) getNumbUsedStates(larger,ignoreInitialSt)) * (float) 100;
 
     return states_red;
 }
 
-float measureTransitionsReduction(const Automaton& smaller, const Automaton& larger)
+float measureStatesReduction(const AutData& smaller, const AutData& larger, bool ignoreInitialSt)
+{
+    return measureStatesReduction(getAut(smaller), getAut(larger), ignoreInitialSt);
+}
+
+float measureTransitionsReduction(const Automaton& smaller, const Automaton& larger, bool ignoreInitialSt)
 {
     float transitions_red;
 
-    if (getNumbTransitions(larger) == 0)
+    if (getNumbTransitions(larger,ignoreInitialSt) == 0)
         transitions_red = 100;
     else
-        transitions_red = ((float) getNumbTransitions(smaller)
-                           / (float) getNumbTransitions(larger)) * (float) 100;
+        transitions_red = ((float) getNumbTransitions(smaller,ignoreInitialSt)
+                           / (float) getNumbTransitions(larger,ignoreInitialSt)) * (float) 100;
 
     return transitions_red;
 }
 
-float measureTransDensReduction(const Automaton& smaller, const Automaton& larger)
+float measureTransitionsReduction(const AutData& smaller, const AutData& larger, bool ignoreInitialSt)
 {
-    return (getTransitionDensity(smaller) / getTransitionDensity(larger)) * (float) 100;
+    return measureTransitionsReduction(getAut(smaller), getAut(larger),ignoreInitialSt);
+}
+
+float measureTransDensReduction(const Automaton& smaller, const Automaton& larger, bool ignoreInitialSt)
+{
+    return (getTransitionDensity(smaller,ignoreInitialSt) / getTransitionDensity(larger,ignoreInitialSt)) * (float) 100;
+}
+
+float measureTransDensReduction(const AutData& smaller, const AutData& larger, bool ignoreInitialSt)
+{
+    return measureTransDensReduction(getAut(smaller), getAut(larger),ignoreInitialSt);
+}
+
+/* Converts a float to a string representation containing 2 decimal values. */
+string convert2DecStr(float f)
+{
+    return (boost::format("%.2f") % f).str();
 }
 
 void printAut(const Automaton& aut, stateDict* dict) {
@@ -755,6 +924,13 @@ void printAut(const Automaton& aut, stateDict* dict) {
     }
 
     std::cout << std::flush;
+}
+
+void printAut(const AutData& autData)
+{
+
+    printAut(getAut(autData));
+
 }
 
 string autToStringTimbuk(const Automaton& aut)

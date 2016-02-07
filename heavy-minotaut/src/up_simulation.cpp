@@ -3,11 +3,12 @@
  *                                  Heavy MinOTAut                  				*
  *              - heavy minimization algorithms for tree automata					*
  *                                                                                  *
- * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 		Copyright (c) 2014-16	Ricardo Almeida	(LFCS - University of Edinburgh)	*
  * 																					*
  *	Description:																	*
  * 		Implementation file for the computation of the lookahead upward simulation  *
- *  (strict or non-strict).                                                         *
+ *  (strict or non-strict). For more detailed explanations please consult           *
+ *  README.txt/Publications.                                                        *
  * 																					*
  ************************************************************************************/
 
@@ -17,12 +18,14 @@ bool defend(const Automaton& aut, Step& step, const state q, vector<vector<pair<
             const vector<bool> isFinal, const vector<typerank> ranks,
             const vector<vector<bool> >& param_rel, const bool strict,
             const vector<vector<bool> >& W,
-            timespec* timestart_timeout, unsigned int timeout = 0)
+            seconds timestart_timeout, seconds timeout = 0)
 {
 
-    if (timestart_timeout != NULL) check_timeout(aut, *timestart_timeout, timeout);
+    check_timeout(aut, timestart_timeout, timeout);
 
     state p = step.getState();
+
+    if (p==q) return true;
 
     if (OPT[WEAK_ACCEPTANCE_COND]==OFF && isFinal[p] && !isFinal[q])
         return false;
@@ -66,12 +69,13 @@ bool defend(const Automaton& aut, Step& step, const state q, vector<vector<pair<
 
 bool attack(const Automaton& aut, Step* leafStep, Step& rootStep, const state q,
             const unsigned int depth, const unsigned int la,
-            vector<vector<pair<transition,size_t>> >& trans_botup, const vector<bool> isFinal, const vector<typerank> ranks,
+            vector<vector<pair<transition,size_t>> >& trans_botup, const vector<bool> isFinal,
+            const vector<typerank> ranks,
             const vector<vector<bool> >& param_rel, const bool strict, const vector<vector<bool> >& W,
-            timespec* timestart_timeout, unsigned int timeout = 0)
+            seconds timestart_timeout, seconds timeout = 0)
 {
 
-    if (timestart_timeout != NULL) check_timeout(aut, *timestart_timeout, timeout);
+    check_timeout(aut, timestart_timeout, timeout);
 
     if (depth==la)
         return !defend(aut,*leafStep,q,trans_botup,isFinal,ranks,param_rel,strict,W,timestart_timeout, timeout);
@@ -118,12 +122,9 @@ float refine(const Automaton& aut, const vector<bool> isFinal, const vector<type
              vector<vector<pair<transition,size_t>> >& trans_botup,
              const unsigned int la, const vector<vector<bool> >& param_rel,
              const bool strict, vector<vector<bool> >& W, const unsigned int n,
-             timespec* timestart_timeout = NULL, unsigned int timeout = 0)
+             seconds timestart_timeout = 0, seconds timeout = 0)
 {
     unsigned int counter = 0, visits = 0;
-
-    if (timestart_timeout == NULL)
-        clock_gettime(CLOCK_THREAD_CPUTIME_ID, timestart_timeout);
 
     try
     {
@@ -198,14 +199,14 @@ vector<vector<bool> >& pre_refine(vector<vector<bool> >& W, const Automaton& aut
                                   const vector<vector<vector<unsigned int> > >& post_len,
                                   const unsigned int numb_states, const unsigned int greatest_symbol,
                                   const typerank greatest_rank,
-                                  timespec* timestart_timeout = NULL, unsigned int timeout = 0)
+                                  seconds timestart_timeout = 0, seconds timeout = 0)
 {
 
     // might be easy to adapt to depths greater than 1
     for (unsigned int p=0; p<numb_states; p++)
-        for (unsigned int q=0; q<numb_states; q++)
+        for (unsigned int q=0; q<numb_states && q!=p; q++)
         {
-            if (timestart_timeout != NULL) check_timeout(aut, *timestart_timeout, timeout);
+            check_timeout(aut, timestart_timeout, timeout);
 
             for (unsigned int s=0; s<greatest_symbol+1 && W.at(p).at(q); s++)
                 for (unsigned int i=0; i<greatest_rank && W.at(p).at(q); i++)
@@ -214,6 +215,7 @@ vector<vector<bool> >& pre_refine(vector<vector<bool> >& W, const Automaton& aut
         }
 
     return W;
+
 }
 
 
@@ -222,7 +224,7 @@ vector<vector<bool> > up_simulation(const AutData& autData,
                                     const vector<vector<bool> >& param_rel, const bool param_strict,
                                     const unsigned int n,
                                     const unsigned int greatest_symbol, float *refinements,
-                                    timespec* timeout_start, unsigned int timeout)
+                                    seconds timeout_start, seconds timeout)
 {
 
     if (refinements != NULL) *refinements = 0;
@@ -232,8 +234,7 @@ vector<vector<bool> > up_simulation(const AutData& autData,
 
     vector<vector<bool> > W = createBoolMatrix(n,n,true);
 
-    if (n==0)
-        return W;
+    if (n==0) return W;
 
     vector<bool> isFinal = getIsFinal(aut,n);
 
@@ -259,7 +260,7 @@ vector<vector<bool> > up_simulation_strict(const AutData& autData, const unsigne
                                            const vector<vector<bool> >& param_rel, const bool strict,
                                            const unsigned int n, const unsigned int numb_symbols,
                                            float* refinements,
-                                           timespec* timeout_start, unsigned int timeout)
+                                           seconds timeout_start, seconds timeout)
 {
     vector<vector<bool> > W = up_simulation(autData, la, param_rel, strict, n, numb_symbols, refinements, /*ranks,*/ timeout_start, timeout);
 

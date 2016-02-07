@@ -3,7 +3,7 @@
  *                                  Heavy MinOTAut                  				*
  *              - heavy minimization algorithms for tree automata					*
  *                                                                                  *
- * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 		Copyright (c) 2014-16	Ricardo Almeida	(LFCS - University of Edinburgh)	*
  * 																					*
  *	Description:																	*
  * 		Objects of the classes defined in this file are used to keep record         *
@@ -36,11 +36,24 @@ void MetaData::updateInitialAvg(unsigned int q, unsigned int delta, unsigned int
     this->initial_avg_sigma   = ( this->initial_avg_sigma*(this->total-1) + sigma )     / (float) this->total;
     this->initial_avg_ranking = ( this->initial_avg_ranking*(this->total-1) + avg_ranking ) / (float) this->total;
     this->initial_avg_dens    = ( this->initial_avg_dens*(this->total-1) + dens )       / (float) this->total;
-    for (unsigned int i=0; i<transOverlap.size(); i++)
-    {
-        (this->initial_avg_transOverlap).at(i)
-                = ((this->initial_avg_transOverlap).at(i)*(this->total-1) + (transOverlap).at(i) ) / (float) this->total;
-    }
+    if (!transOverlap.empty())
+        for (unsigned int i=0; i<transOverlap.size(); i++)
+        {
+            (this->initial_avg_transOverlap).at(i)
+                    = ((this->initial_avg_transOverlap).at(i)*(this->total-1) + (transOverlap).at(i) ) / (float) this->total;
+        }
+}
+
+void MetaData::updateInitialAvg(const Automaton& aut)
+{
+    this->updateInitialAvg(getNumbUsedStates(aut,true), getNumbTransitions(aut,true),
+                           getNumbSymbols(aut,true), getAvgRank(aut), getTransitionDensity(aut,true),
+                           measureTransOverlaps(aut));
+}
+
+void MetaData::updateInitialAvg(const AutData& autData)
+{
+    this->updateInitialAvg(getAut(autData));
 }
 
 void MetaData::checkInitialGreatest(unsigned int q, unsigned int delta, unsigned int sigma, float ranking, float dens, vector<float> transOverlap)
@@ -60,6 +73,28 @@ void MetaData::checkInitialGreatest(unsigned int q, unsigned int delta, unsigned
         if ((transOverlap).at(i) > (this->initial_greatest_transOverlap).at(i))
             (this->initial_greatest_transOverlap).at(i) = (transOverlap).at(i);
     }
+}
+
+string MetaData::initial_avg_q_str2Dec()
+{
+    return convert2DecStr(this->initial_avg_q);
+}
+
+string MetaData::initial_avg_delta_str2Dec()
+{
+    return convert2DecStr(this->initial_avg_delta);
+}
+
+string MetaData::initial_avg_transDens_str2Dec()
+{
+    return convert2DecStr(this->initial_avg_dens);
+}
+
+string MetaData::initial_avg_transOverlap_str()
+{
+    return "(" + convert2DecStr(this->initial_avg_transOverlap.at(0)) + ", " +
+                 convert2DecStr(this->initial_avg_transOverlap.at(1)) + ", " +
+                 convert2DecStr(this->initial_avg_transOverlap.at(2)) + ")";
 }
 
 
@@ -173,6 +208,28 @@ void TestData::updateAvgReductions(float q_red, float delta_red, float transDens
     this->avg_transDens_reduction = ( this->avg_transDens_reduction*(this->total-1) + transDens_red ) / (float) this->total;
 }
 
+void TestData::updateAvgReductions(const AutData& autData_smaller, const AutData& autData_larger)
+{
+    float q_red          =  measureStatesReduction(autData_smaller, autData_larger, true);
+    float delta_red      =  measureTransitionsReduction(autData_smaller, autData_larger, true);
+    float transDens_red  =  measureTransDensReduction(autData_smaller, autData_larger, true);
+
+    this->updateAvgReductions(q_red, delta_red, transDens_red);
+}
+
+void TestData::updateAvgSizes(unsigned int q, unsigned int delta, float transDens)
+{
+    this->avg_q_size      = ((float) ( this->avg_q_size*(this->total-1) + q )) / (float) this->total;
+    this->avg_delta_size  = ((float) ( this->avg_delta_size*(this->total-1) + delta )) / (float) this->total;
+    this->avg_transDens   = ( this->avg_transDens*(this->total-1) + transDens ) / (float) this->total;
+}
+
+void TestData::updateAvgSizes(const AutData& autData)
+{
+    this->updateAvgSizes(getNumbUsedStates(autData,true), getNumbTransitions(autData,true),
+                         getTransitionDensity(autData,true));
+}
+
 void TestData::updateAvgTime(float time)
 {
     this->avg_time  =  ( this->avg_time*(this->total-1) + time ) / (float) this->total;
@@ -215,6 +272,41 @@ void TestData::printReductionBuckets(const string filename)
     printBucket(this->transDens_reduction_buckets, filename);
 }
 
+string TestData::avg_q_str2Dec()
+{
+    return convert2DecStr(this->avg_q_size);
+}
+
+string TestData::avg_delta_str2Dec()
+{
+    return convert2DecStr(this->avg_delta_size);
+}
+
+string TestData::avg_transDens_str2Dec()
+{
+    return convert2DecStr(this->avg_transDens);
+}
+
+string TestData::avg_q_red_str2Dec()
+{
+    return convert2DecStr(this->avg_q_reduction);
+}
+
+string TestData::avg_delta_red_str2Dec()
+{
+    return convert2DecStr(this->avg_delta_reduction);
+}
+
+string TestData::avg_transDens_red_str2Dec()
+{
+    return convert2DecStr(this->avg_transDens_reduction);
+}
+
+string TestData::avg_time_str2Dec()
+{
+    return convert2DecStr(this->avg_time);
+}
+
 
 void Timeout::inc()
 {
@@ -245,4 +337,48 @@ void QueriesCounter::incNumbSucLookups()
 void QueriesCounter::incNumbUnsucLookups()
 {
     this->numb_unsucLookups++;
+}
+
+
+void log_time(string log_filename, float time)
+{
+    string time_2DecVals = convert2DecStr(time);
+    writeToFile(log_filename, time_2DecVals + "\t");
+}
+
+void log_autSizes(string log_filename, const Automaton& aut, float time)
+{
+    writeToFile(log_filename,
+                getNumbUsedStates_str(aut,true) + "\t" +
+                getNumbTransitions_str(aut,true) + "\t" +
+                convert2DecStr(getTransitionDensity(aut,true)) + "\t");
+
+    if (time > 0.0) log_time(log_filename, time);
+}
+
+void log_autSizes(string log_filename, const AutData& autData, float time)
+{
+    log_autSizes(log_filename, getAut(autData), time);
+}
+
+void log_autTransOverlap(string log_filename, const AutData& autData)
+{
+    writeToFile(log_filename,
+                measureTransOverlaps_str2Dec(autData) + "\t");
+}
+
+void log_autReduction(string log_filename,
+                      const Automaton& aut_smaller, const Automaton& aut_larger, float time)
+{
+    writeToFile(log_filename,
+                convert2DecStr(measureStatesReduction(aut_smaller, aut_larger, true)) + "\t" +
+                convert2DecStr(measureTransitionsReduction(aut_smaller, aut_larger, true)) + "\t" +
+                convert2DecStr(measureTransDensReduction(aut_smaller, aut_larger, true)) + "\t");
+
+    if (time > 0.0) log_time(log_filename, time);
+}
+
+void log_autReduction(string log_filename, const AutData& autData_smaller, const AutData autData_larger, float time)
+{
+    log_autReduction(log_filename, getAut(autData_smaller), getAut(autData_larger), time);
 }

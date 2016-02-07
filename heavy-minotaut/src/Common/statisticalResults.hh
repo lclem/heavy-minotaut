@@ -3,7 +3,7 @@
  *                                  Heavy MinOTAut                  				*
  *              - heavy minimization algorithms for tree automata					*
  *                                                                                  *
- * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 		Copyright (c) 2014-16	Ricardo Almeida	(LFCS - University of Edinburgh)	*
  * 																					*
  *	Description:																	*
  * 		Objects of the classes declared in this header file are used to keep record *
@@ -17,6 +17,7 @@
 #define STATISTICALRESULTS_H
 
 #include "common.hh"
+#include "automatonHelper.hh"
 
 
 /* Objects of this class store general data of the experiments, as measures of the automata given from input. */
@@ -38,8 +39,14 @@ class MetaData
         vector<float> initial_greatest_transOverlap;
         MetaData();
         void inc();
-        void updateInitialAvg(unsigned int q, unsigned int delta, unsigned int sigma, float avg_ranking, float dens, vector<float> transOverlap);
-        void checkInitialGreatest(unsigned int q, unsigned int delta, unsigned int sigma, float ranking, float dens, vector<float> transOverlap);
+        void updateInitialAvg(unsigned int q, unsigned int delta, unsigned int sigma, float avg_ranking, float dens, vector<float> transOverlap = {});
+        void updateInitialAvg(const Automaton& aut);
+        void updateInitialAvg(const AutData& autData);
+        void checkInitialGreatest(unsigned int q, unsigned int delta, unsigned int sigma, float ranking, float dens, vector<float> transOverlap = {});
+        string initial_avg_q_str2Dec();
+        string initial_avg_delta_str2Dec();
+        string initial_avg_transDens_str2Dec();
+        string initial_avg_transOverlap_str();
 };
 
 /* An object of this class stores data relative to a specific kind of test. */
@@ -55,6 +62,9 @@ class TestData
         float avg_q_reduction = 0;              // on average, how many of the states (%) are still present in the automata after the reduction
         float avg_delta_reduction = 0;          // on average, how many of the transitions (%) are still present in the automata after the reduction
         float avg_transDens_reduction = 0;          // on average, how does the transitions density before the reduction compare to that after it.
+        float avg_q_size = 0;
+        float avg_delta_size = 0;
+        float avg_transDens = 0;
         float avg_time = 0;
         vector<float> avg_sizes_relations;
         vector<float> avg_times_relations;
@@ -65,7 +75,6 @@ class TestData
         vector<unsigned int> q_reduction_buckets;
         vector<unsigned int> delta_reduction_buckets;
         vector<unsigned int> transDens_reduction_buckets;
-
         TestData();
         TestData(unsigned int numb_relations, unsigned int numb_quotientings, unsigned int numb_prunings);
         void inc();
@@ -77,9 +86,19 @@ class TestData
         void updateAvgTimes(vector<float> times_relations, vector<float> times_quotientings, vector<float> times_prunings);
         void checkGreatestReductions(float q_red, float delta_red, float transDens_red);
         void updateAvgReductions(float q_red, float delta_red, float transDens_red);
+        void updateAvgReductions(const AutData& autData_smaller, const AutData& autData_larger);
+        void updateAvgSizes(unsigned int q, unsigned int delta, float transDens);
+        void updateAvgSizes(const AutData& autData);
         void updateReductionBuckets(float q_red, float delta_red, float transDens_red);
         void printReductionBuckets(const string filename);
         bool isEmpty(const TestData& testData);
+        string avg_q_str2Dec();
+        string avg_delta_str2Dec();
+        string avg_transDens_str2Dec();
+        string avg_q_red_str2Dec();
+        string avg_delta_red_str2Dec();
+        string avg_transDens_red_str2Dec();
+        string avg_time_str2Dec();
 };
 
 
@@ -114,6 +133,14 @@ class QueriesCounter
 extern MetaData emptyMetaData;
 extern TestData emptyTestData;
 extern Timeout emptyTimeout;
+
+void log_time(string log_filename, float time);
+void log_autSizes(string log_filename, const Automaton& aut, float time = 0.0);
+void log_autSizes(string log_filename, const AutData& autData, float time = 0.0);
+void log_autTransOverlap(string log_filename, const AutData& autData);
+void log_autReduction(string log_filename,
+                      const Automaton& aut_smaller, const Automaton& aut_larger, float time = 0.0);
+void log_autReduction(string log_filename, const AutData& autData_smaller, const AutData autData_larger, float time = 0.0);
 
 
 #endif // STATISTICALRESULTS_H

@@ -3,7 +3,7 @@
  *                                  Heavy MinOTAut                  				*
  *              - heavy minimization algorithms for tree automata					*
  *                                                                                  *
- * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 		Copyright (c) 2014-16	Ricardo Almeida	(LFCS - University of Edinburgh)	*
  * 																					*
  *	Description:																	*
  * 		Header file containing definitions of all the exceptions used in this       *
@@ -57,5 +57,6 @@ struct timeout_ : public exception
 };
 
 void check_timeout(const Automaton& aut, timespec timeout_start, unsigned int timeout = 0);
+void check_timeout(const Automaton &aut, seconds timeout_start = 0, seconds timeout = 0);
 
 #endif

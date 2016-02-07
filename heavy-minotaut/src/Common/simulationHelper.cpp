@@ -3,7 +3,7 @@
  *                                  Heavy MinOTAut                  				*
  *              - heavy minimization algorithms for tree automata					*
  *                                                                                  *
- * 		Copyright (c) 2014-15	Ricardo Almeida	(LFCS - University of Edinburgh)	*
+ * 		Copyright (c) 2014-16	Ricardo Almeida	(LFCS - University of Edinburgh)	*
  * 																					*
  *	Description:																	*
  * 		Implementationfile for a collection of utility functions which aid in the   *
@@ -333,7 +333,7 @@ void convertBinaryRelToBoolMatrix(const Automaton& aut,
                                   const stateDiscontBinaryRelation& binRel,
                                   vector<vector<bool> >& W)
 {    
-    VATA::Util::BinaryRelation matrix = binRel.getMatrix();
+    //VATA::Util::BinaryRelation matrix = binRel.getMatrix();
 
     stateSet usedStates = getUsedStates(aut);
     state initialState  = getInitialState(aut);
@@ -347,8 +347,8 @@ void convertBinaryRelToBoolMatrix(const Automaton& aut,
                 else W.at(p).at(q) = false;
             }
             else
-                W.at(p).at(q) =
-                        matrix.data_[binRel.getDict().TranslateFwd(p)*matrix.rowSize_+binRel.getDict().TranslateFwd(q)];
+                W.at(p).at(q) = binRel.get(p,q);
+                        //matrix.data_[binRel.getDict().TranslateFwd(p)*matrix.rowSize_+binRel.getDict().TranslateFwd(q)];
 
 }
 
