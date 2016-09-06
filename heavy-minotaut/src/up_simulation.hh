@@ -25,13 +25,28 @@ extern bool OPT_RESTART_REFINE_3;
 
 vector<vector<bool> > up_simulation(const AutData &autData, const unsigned int la,
                                     const vector<vector<bool> >& param_rel, const bool strict,
-                                    const unsigned int n, const unsigned int greatest_symbol = 0,
+                                    const unsigned int greatest_state = 0, const unsigned int greatest_symbol = 0,
                                     float* refinements = NULL,
-                                    seconds timeout_start = 0, seconds timeout = 0);
+                                    Time& timeout_start = Epoch, seconds timeout = 0);
 vector<vector<bool> > up_simulation_strict(const AutData &autData, const unsigned int la,
-                                           const vector<vector<bool> >& param_rel, const bool strict, const unsigned int n,
-                                           const unsigned int numb_symbols, float *refinements = NULL,
-                                           seconds timeout_start = 0, seconds timeout = 0);
-
+                                           const vector<vector<bool> >& param_rel, const bool strict,
+                                           const unsigned int greatest_state = 0, const unsigned int greatest_symbol = 0,
+                                           float* refinements = NULL,
+                                           Time& timeout_start = Epoch, seconds timeout = 0);
+vector<vector<bool> > up_simulation_larger(const AutData &autData, const unsigned int la,
+                                           const vector<vector<bool> >& param_rel, const bool strict,
+                                           const unsigned int greatest_state = 0, const unsigned int greatest_symbol = 0,
+                                           float* refinements = NULL,
+                                           Time& timeout_start = Epoch, seconds timeout = 0);
+vector<vector<bool> > up_simulation_of_id(const AutData& autData,
+                                          const unsigned int la,
+                                          const unsigned int greatest_state = 0, const unsigned int greatest_symbol = 0,
+                                          float* refinements = NULL,
+                                          Time& timeout_start = Epoch, seconds timeout = 0);
+vector<vector<bool> > up_simulation_of_id_strict(const AutData& autData,
+                                                 const unsigned int la,
+                                                 const unsigned int greatest_state = 0, const unsigned int greatest_symbol = 0,
+                                                 float* refinements = NULL,
+                                                 Time& timeout_start = Epoch, seconds timeout = 0);
 
 #endif

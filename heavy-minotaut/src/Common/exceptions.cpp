@@ -29,14 +29,16 @@ void check_timeout(const Automaton &aut, timespec timeout_start, unsigned int ti
     }
 }
 
-void check_timeout(const Automaton &aut, seconds timeout_start, seconds timeout)
+void check_timeout(const Automaton &aut, Time& timeout_start, seconds timeout)
 {
-    if (timeout_start == 0)
+    if (timerNotStarted(timeout_start))
         return; /* Nothing to do here. */
 
-    seconds timeout_value = timeout==0 ? TIMEOUT : timeout;
-    seconds time_now = secsSinceEpoch();
-    if (time_now - timeout_start >= timeout_value)
+    seconds timeout_value = (timeout<=0) ? TIMEOUT : timeout;
+    //seconds time_now = secsSinceEpoch();
+    //chr_time time_now = startTimer();
+    //if (time_now - timeout_start >= timeout_value)
+      //  throw timeout_(aut);
+    if (elapsedSec(timeout_start) >= timeout_value)
         throw timeout_(aut);
-
 }

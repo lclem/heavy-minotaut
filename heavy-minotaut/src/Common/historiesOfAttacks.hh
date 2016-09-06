@@ -33,7 +33,7 @@ typedef std::conditional<areGlobalHistsBasedOnSets,
                          codes_map>::type str;
 typedef vector<vector<str>> globalHist;
 
-globalHist newHistoryGlocalAttacks(unsigned int numb_states);
+globalHist newHistoryGlobalAttacks(unsigned int numb_states);
 semiGlobalHist newHistorySemiGlobalAttacks(unsigned int numb_states);
 vector<vector<bool> > newHistoryLocalAttacks(unsigned int numb_states, unsigned int numb_p_children);
 

@@ -44,9 +44,13 @@ extern const unsigned int WEAK_ACCEPTANCE_COND;
 
 extern vector<unsigned int> OPT;
 
+extern const int AUTO_PR;
+extern int pr_depth;
+
 // Functions
-void startOPT();
+void startOPTDefaults();
 void setOPT(unsigned int option, unsigned int value);
+string getOPT(unsigned int code);
 
 
 #endif // EXECUTIONOPTIONS_HH

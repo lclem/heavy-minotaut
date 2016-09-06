@@ -20,6 +20,7 @@
 #include "../src/combined_relation.hh"
 #include "../src/quotienting.hh"
 #include "../src/pruning.hh"
+#include "../src/saturation.hh"
 #include "../src/Common/statisticalResults.hh"
 
 /* Encodings */
@@ -46,51 +47,52 @@ extern const unsigned int numbPrunings                        ;
 AutData removeDeadStates(const AutData &autData);
 
 AutData heavy(const AutData &autData, unsigned int la_dw,
-                     unsigned int la_up,
+                     unsigned int la_up, Time& timeout_start = Epoch,
                      TestData& testData = emptyTestData,
                      string log_humanread_filename = "");
 AutData heavyGradual(const AutData &autData_i, unsigned int la_dw, unsigned int la_dw_max,
                        unsigned int greatest_symbol,
-                       TestData& testData = emptyTestData, seconds timeout_start = 0, string log_humanread_filename = "");
-
-AutData quotient_with_combined_relation(const AutData &autData,
-                                          unsigned int la_dw, unsigned int la_up,
-                                          unsigned int numb_states = 0,
-                                          unsigned int greatest_symbol = 0,
-                                          seconds timeout_start = 0, seconds timeout = 0);
-
-void prune_with_up_la_dw_la_and_strict_dw_la(Automaton& aut_i,
-                                             stateDict stateDict,
-                                             unsigned int la_dw, unsigned int la_up,
-                                             const vector<typerank>& ranks,
-                                             unsigned int numb_states = 0,
-                                             unsigned int numb_symbols = 0,
-                                             bool use_lvata = false);
-
+                       TestData& testData = emptyTestData, Time& timeout_start = Epoch, string log_humanread_filename = "");
+void applyProcedure(const AutData& autData_i,   MetaData& metaData,
+                    TestData& testData_ru,
+                    TestData& testData_quot,    Timeout& timeout_quot,
+                    TestData& testData_qAndP,   Timeout& timeout_qAndP,
+                    TestData& testData_heavy11, Timeout& timeout_heavy11,
+                    TestData& testData_heavy24, Timeout& timeout_heavy24,
+                    string log, bool ignore_i, bool ignore_red);
 AutData applyHeavy(const AutData &autData_i, MetaData& metaData,
                 unsigned int la_dw, unsigned int la_up,
-                TestData& testData_heavy, Timeout& timeout_heavy, string log);
+                TestData& testData_heavy, Timeout& timeout_heavy, int outputStat_type = NO_OUT, string log = "");
+AutData applyHeavyWithSat(const AutData& autData_i,
+                          unsigned int la_dw, unsigned int la_up,
+                          unsigned int la_dw_sat, unsigned int la_up_sat, unsigned int sat_version, unsigned int max_sat_attempts,
+                          MetaData& metaData = emptyMetaData, TestData& testData_heavy = emptyTestData, Timeout& timeout_heavy = emptyTimeout,
+                          int outputStat_type = NO_OUT, string log = "");
 
-void applyQuotCombinedPreorder(const AutData& autData, stateDict sDict, MetaData& metaData,
+void applyQuotCombinedPreorder(const AutData& autData, MetaData& metaData,
                                unsigned int la_dw, unsigned int la_up,
                                TestData& testData, Timeout& timeout,
                                string log_humanread_filename,
                                string log_machread_filename,
                                string log_machread_times_filename);
 
-AutData quotient_with_dw_la_sim(const AutData &autData,
-                    unsigned int la_dw,
-                    unsigned int greatest_state  = 0,
-                    unsigned int greatest_symbol = 0,
-                    string log_humanread_filename = "");
-
 AutData applyMinimizationSequence(const AutData& autData_i,
                                   unsigned int la_dw, unsigned int la_up,
                                   unsigned int greatest_state  = 0,
                                   unsigned int greatest_symbol = 0,
-                                  seconds timeout_start = 0,
+                                  Time& timeout_start = Epoch,
                                   TestData& testData = emptyTestData,
                                   string log_humanread_filename = "");
+
+void compareHeavyWithSatVersions(const AutData& autData_i, MetaData& metaData,
+                                 unsigned int la_dw, unsigned int la_up,
+                                 unsigned int la_dw_sat, unsigned int la_up_sat, unsigned int max_sat_attempts,
+                                 TestData& testData_h, Timeout& timeout_h,
+                                 TestData& testData_v1, Timeout& timeout_v1,
+                                 TestData& testData_v1withLoop, Timeout& timeout_v1withLoop,
+                                 TestData& testData_v3, Timeout& timeout_v3,
+                                 TestData& testData_v2withLoop, Timeout& timeout_v2withLoop, TestData &testData_v2withLoop2, Timeout &timeout_v2withLoop2,
+                                 string log);
 
 
 #endif // UP_SIMULATION_TESTER_H

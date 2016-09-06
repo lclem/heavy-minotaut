@@ -16,7 +16,7 @@
 
 vector<vector<bool> > combined_relation(const AutData& aut, const unsigned int la_dw, const unsigned int la_up,
                                         const unsigned int numb_states, const unsigned int greatest_symbol,
-                                        seconds timeout_start, seconds timeout)
+                                        Time& timeout_start, seconds timeout)
 {
 
     vector<vector<bool> > W_dw, W_up, W_composed, W_combined;

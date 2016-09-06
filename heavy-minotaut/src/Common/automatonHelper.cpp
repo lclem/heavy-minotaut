@@ -13,6 +13,7 @@
 
 #include "automatonHelper.hh"
 
+
 Automaton addInitialState(const Automaton& old_aut)
 {
     Automaton new_aut = copyAutWithoutTrans(old_aut);
@@ -109,19 +110,37 @@ string removeAlphabetLine(string autStr)
     return prefix + rest;
 }
 
-set<symbol> getUsedSymbols(const Automaton& aut)
+set<symbol> getSymbolsFrom(const Automaton& aut, state p, bool ignoreLeafSymbols)
 {
-    //vector<symbol> symbols;
     set<symbol> symbols;
 
-    for (const lv_transition& trans : aut)
+    for (const lv_transition& trans : aut[p])
     {
+        if (isALeafTransition(trans, aut) && ignoreLeafSymbols)
+            continue;
+
         symbols.insert(trans.GetSymbol());
     }
 
     return symbols;
 }
 
+set<symbol> getUsedSymbols(const Automaton& aut, bool ignoreLeafSymbols)
+{
+    set<symbol> symbols;
+    stateSet states = getUsedStates(aut);
+
+    for (state p : states)
+    {
+        set<symbol> symbols_from_p = getSymbolsFrom(aut, p, ignoreLeafSymbols);
+        symbols.insert(symbols_from_p.begin(), symbols_from_p.end());
+    }
+
+    return symbols;
+}
+
+/* This function is not completely reliable: it should only be used immediately after the
+ * automaton has been parsed. */
 vector<typerank> getRanks(const Automaton& aut)
 {
     set<symbol> symbols = getUsedSymbols(aut);
@@ -149,24 +168,20 @@ vector<typerank> getRanks(const Automaton& aut)
         if (rank==0) rank = 1;      /* Since we make the initial state explicit. */
         ranks.at(s) = rank;
         if (s > greatest_symbol)
-            outputText("Oh no");
+            exit_with_error("Found a symbol greatest than the greatest symbol!");
     }
 
     return ranks;
 }
 
 
-AutData parseFromString(string autStr, stateDict& stateDict)
+AutData parseFromString(string autStr, stateDict& sDict)
 {
     /* Parsing the automaton. */
     std::unique_ptr<VATA::Parsing::AbstrParser> parser(new VATA::Parsing::TimbukParser());
 
-    //autStr = removeAlphabetLine(autStr);
-
     Automaton aut;
-    Automaton::AlphabetType onTheFlyAlph(new Automaton::OnTheFlyAlphabet);
-    aut.SetAlphabet(onTheFlyAlph);
-    aut.LoadFromString(*parser, autStr, stateDict);
+    aut.LoadFromString(*parser, autStr, sDict);
 
     aut = addInitialState(aut);
 
@@ -183,11 +198,7 @@ Automaton parseFromString2(string autStr, stateDict& stateDict, vector<typerank>
     /* Parsing the automaton. */
     std::unique_ptr<VATA::Parsing::AbstrParser> parser(new VATA::Parsing::TimbukParser());
 
-    //autStr = removeAlphabetLine(autStr);
-
     Automaton aut;
-    Automaton::AlphabetType onTheFlyAlph(new Automaton::OnTheFlyAlphabet);
-    aut.SetAlphabet(onTheFlyAlph);
     aut.LoadFromString(*parser, autStr, stateDict);
 
     aut = addInitialState(aut);
@@ -198,13 +209,43 @@ Automaton parseFromString2(string autStr, stateDict& stateDict, vector<typerank>
     return aut;
 }
 
-AutData parseFromFile(string filename, stateDict& stateDict)
+AutData parseFromFile(string filename, stateDict& sDict)
 {
-    return parseFromString(VATA::Util::ReadFile(filename), stateDict);
+    return parseFromString(VATA::Util::ReadFile(filename), sDict);
+}
+
+/* Caution: an automaton parsed with this function cannot be printed using printAut
+ * since the stateDict parameter is missing. */
+AutData parseFromFile(string filename)
+{
+    stateDict sDict;
+    return parseFromFile(filename, sDict);
+}
+
+string autToStringTimbuk(const Automaton& aut, stateDict& sDict)
+{
+    VATA::Serialization::AbstrSerializer* serializer =
+        new VATA::Serialization::TimbukSerializer();
+    // dump the automaton
+    string result = aut.DumpToString(*serializer, sDict);
+
+    return result;
+}
+
+string autToStringTimbuk(const Automaton& aut)
+{
+    string result;
+
+    VATA::Serialization::AbstrSerializer* serializer =
+        new VATA::Serialization::TimbukSerializer();
+    // dump the automaton
+    result = aut.DumpToString(*serializer);
+
+    return result;
 }
 
 /* Note that this function REWRITES the output automaton if a file with the same same already exists! */
-void saveToFile(const Automaton& aut, string filename, bool removeInitialSt)
+void saveAutToFile(const Automaton& aut, stateDict& sDict, string filename, bool removeInitialSt)
 {
     Automaton aut_;
     if (removeInitialSt)
@@ -212,12 +253,54 @@ void saveToFile(const Automaton& aut, string filename, bool removeInitialSt)
     else
         aut_ = aut;
 
-    writeToFile(filename, autToStringTimbuk(aut_), true);
+    writeToFile(filename, autToStringTimbuk(aut_,sDict), true);
 }
 
-void saveToFile(const AutData& autData, string filename, bool removeInitialSt)
+void saveAutToFile(const AutData& autData, stateDict& sDict, string filename, bool removeInitialSt)
 {
-    saveToFile(getAut(autData), filename, removeInitialSt);
+    saveAutToFile(getAut(autData), sDict, filename, removeInitialSt);
+}
+
+void saveAutToFile(const Automaton& aut, string filename, bool removeInitialSt)
+{
+    Automaton aut_;
+    if (removeInitialSt)
+        aut_ = removeInitialState(aut);
+    else
+        aut_ = aut;
+
+    string str_aut = autToStringTimbuk(aut_);
+
+    writeToFile(filename, str_aut, true);
+}
+
+void saveAutToFile(const AutData& autData, string filename, bool removeInitialSt)
+{
+    saveAutToFile(getAut(autData), filename, removeInitialSt);
+}
+
+tuple<AutData,stateDict> dumpAndLoadAut(const Automaton& aut)
+{
+    string temp_filename = "aut_" + std::to_string(unique_id()) + ".timbuk";
+    saveAutToFile(aut, temp_filename, true);
+
+    stateDict new_sDict;
+    AutData autData_f = parseFromFile(temp_filename, new_sDict);
+    deleteFile(temp_filename);
+
+    tuple<AutData,stateDict> result = make_tuple(autData_f,new_sDict);
+
+    return result;
+}
+
+tuple<AutData,stateDict> dumpAndLoadAut(const AutData &autData_i)
+{
+    Automaton aut = getAut(autData_i);
+    const vector<typerank> ranks = getRanks(autData_i);
+
+    tuple<AutData,stateDict> tup = dumpAndLoadAut(aut);
+
+    return tup;
 }
 
 const Automaton &getAut(const AutData &autData)
@@ -275,6 +358,8 @@ stateSet getUsedStates(const Automaton& aut)
     return states;
 }
 
+/* All our measures count the special initial state as a state and the initial transitions
+ * as ordinary transitions, therefore the default value for ignoreInitislSt is false. */
 unsigned int getNumbUsedStates(const Automaton& aut, bool ignoreInitialSt)
 {
     if (ignoreInitialSt && getNumbUsedStates(aut) > 0)
@@ -317,6 +402,19 @@ float getTransitionDensity(const Automaton& aut, bool ignoreLeafRules)
 float getTransitionDensity(const AutData& autData, bool ignoreLeafRules)
 {
     return getTransitionDensity(getAut(autData), ignoreLeafRules);
+}
+
+float getTransitionDensity(unsigned int numb_states, unsigned numb_symbols,
+                           unsigned int numb_transitions)
+{
+    float transDens = 0;
+
+    if (numb_states == 0 || numb_symbols == 0)
+        transDens = 0;
+    else
+        transDens = (float) numb_transitions / ((float) numb_states * (float) numb_symbols);
+
+    return transDens;
 }
 
 string getTransitionDensity_str(const Automaton& aut, bool ignoreLeafRules)
@@ -367,6 +465,11 @@ unsigned int getNumbSymbols(const Automaton& aut, bool ignoreLeafSymbols)
         return numb;
 }
 
+unsigned int getNumbSymbols(const AutData& autData, bool ignoreLeafSymbols)
+{
+    return getNumbSymbols(getAut(autData), ignoreLeafSymbols);
+}
+
 float getAvgRank(const Automaton& aut)
 {
     // Get a pointer to the alphabet of type onTheFlyAlphabet which is being used already
@@ -391,6 +494,11 @@ float getAvgRank(const Automaton& aut)
     else
         return (float) ranks / (float) c;
 
+}
+
+float getAvgRank(const AutData& autData)
+{
+    return getAvgRank(getAut(autData));
 }
 
 state getGreatestUsedState(const Automaton& aut)
@@ -418,7 +526,6 @@ state getGreatestUsedState(const AutData& aut)
     return getGreatestUsedState(getAut(aut));
 
 }
-
 
 symbol getGreatestUsedSymbol(const Automaton& aut)
 {
@@ -482,26 +589,51 @@ bool langIsEmpty(const Automaton& aut)
     return equiv(empty,aut);
 }
 
-Automaton complement(const Automaton& aut1)
+bool langIsEmpty(const AutData& autData)
 {
-    Automaton aut1_ = removeInitialState(aut1);
-    Automaton aut2  = aut1_.Complement();
-
-    //equiv(aut1, aut1);
-
-    return addInitialState(aut2);
+    return langIsEmpty(getAut(autData));
 }
 
-AutData complement(const AutData& autData)
+tuple<AutData,stateDict> complement(const Automaton& aut1, float& time_c)
 {
-    return wrapAutData(complement(getAut(autData)), getRanks(autData));
+    Automaton aut1_ = removeInitialState(aut1);
+
+    auto start_c = startTimer();
+    Automaton aut2  = aut1_.Complement();
+    time_c = elapsedSec(start_c);
+
+    aut2 = addInitialState(aut2);
+
+    tuple<AutData,stateDict> tup = dumpAndLoadAut(aut2); // due to a bug in libvata's complement operation, which erases the dictionary during the process
+
+    return tup;
+}
+
+tuple<AutData,stateDict> complement(const Automaton& aut1)
+{
+    float time_c_dump;
+    return complement(aut1,time_c_dump);
+}
+
+tuple<AutData,stateDict> complement(const AutData& autData1, float& time_c)
+{
+    Automaton aut1 = getAut(autData1);
+
+    tuple<AutData,stateDict> tup = complement(aut1,time_c);
+
+    return std::make_tuple(std::get<0>(tup), std::get<1>(tup));
+}
+
+tuple<AutData,stateDict> complement(const AutData& autData1)
+{
+    float time_c_dump;
+    return complement(autData1,time_c_dump);
 }
 
 state getInitialState(const Automaton& aut)
 {
     return getGreatestUsedState(aut);
 }
-
 
 /* String and IO functions */
 
@@ -523,7 +655,8 @@ symbolExt translateSymbol(const Automaton& aut, symbol symb_int){
 
 /* Given a state in its internal representation, the function returns
  * its external representation. */
-stateExt translateState(const Automaton& aut, const stateDict& dict, const state s_int) {
+stateExt translateState(const Automaton& aut, const stateDict& dict, const state s_int)
+{
 
     std::basic_string<char> s_ext;
 
@@ -536,17 +669,37 @@ stateExt translateState(const Automaton& aut, const stateDict& dict, const state
     return s_ext;
 }
 
-/* Returns the number of transitions in the given automaton */
+/* Returns the number of transitions in the given automaton.
+ * All our measures count the initial transitions
+ * as ordinary transitions, therefore the default value for ignoreInitislSt is false. */
 unsigned int getNumbTransitions(const Automaton& aut, bool ignoreLeafRules)
 {
     unsigned int c = 0;
-    for (const lv_transition trans : aut)
+    for (const lv_transition& trans : aut)
+    {
+        if (!isALeafTransition(trans, aut))
+            c++;
+        else
+            if (!ignoreLeafRules)
+                c++;
+    }
+
+    return c;
+}
+
+/* This function has the same result as calling getNumbTransitions with flag ignoreLeafRules=false */
+unsigned int getNumbTransitions(const Automaton& aut)
+{
+    unsigned int c = 0;
+    for (const lv_transition& trans : aut)
         c++;
 
-    if (ignoreLeafRules)
-        return c - getNumbLeafTransitions(aut);
-    else
-        return c;
+    return c;
+}
+
+unsigned int getNumbTransitions(const AutData& autData)
+{
+    return getNumbTransitions(getAut(autData));
 }
 
 unsigned int getNumbTransitions(const AutData& autData, bool ignoreLeafRules)
@@ -564,17 +717,23 @@ string getNumbTransitions_str(const Automaton& aut, bool ignoreLeafRules)
     return std::to_string(getNumbTransitions(aut,ignoreLeafRules));
 }
 
+bool isALeafTransition(const lv_transition& trans, const Automaton& aut)
+{
+    state initialState = /*(initialSt < 0) ?*/ getInitialState(aut) /*: initialSt*/;
+    vector<state> initial_state_children = {initialState};
+
+    return (trans.GetChildren() == initial_state_children);
+}
+
 unsigned int getNumbLeafTransitions(const Automaton& aut)
 {
     unsigned int c = 0;
-    state initialState = getInitialState(aut);
     // This assumes that the explicit initial state has been added to the automaton,
     // which necessarily happens except when the input automaton had no leaf-rules
     // (in such a case, discarding the automaton is advisable).
-    vector<state> initial_state_children = {initialState};
-    for (const lv_transition trans : aut)
+    for (const lv_transition& trans : aut)
     {
-        if (trans.GetChildren() == initial_state_children)
+        if (isALeafTransition(trans, aut))
             c++;
     }
 
@@ -594,8 +753,6 @@ vector<symbol> getLeafSymbols(const Automaton& aut)
         if (trans.GetChildren() == initial_state_children)
             leaf_symbols.push_back(trans.GetSymbol());
     }
-
-    //leaf_symbols.
 
     return removeDuplicates(leaf_symbols);
 }
@@ -689,9 +846,102 @@ unsigned int getSizeLVStateBinRelation(stateDiscontBinaryRelation& binRel, unsig
     return c;
 }
 
+void measureSizeTA(string filename, bool countInitialState, bool countInitialTransitions, bool output_human)
+{
+    AutData autData = parseFromFile(filename);
+    unsigned int numb_states = getNumbUsedStates(autData, !countInitialState);
+    unsigned int numb_trans = getNumbTransitions(autData, !countInitialTransitions);
+    unsigned int numb_symb = getNumbSymbols(autData, !countInitialTransitions);
+    float transDens = getTransitionDensity(numb_states, numb_symb, numb_trans);
+
+    if (output_human)
+        outputText("Numb. states: " + std::to_string(numb_states) + "\tNumb. symbols: "
+                   + std::to_string(numb_symb) + "\tNumb. transitions: " + std::to_string(numb_trans)
+                   + "\tTrans. density: " + convert2DecStr(transDens) + "\n");
+    else
+        outputText(std::to_string(numb_states) + "\t" + std::to_string(numb_symb) + "\t"
+                   + std::to_string(numb_trans) + "\t" + convert2DecStr(transDens) + "\t");
+}
+
 bool statesIntersect(const vector<state>& vec1, const vector<state>& vec2)
 {
     return (std::find_first_of(vec1.begin(), vec1.end(), vec2.begin(), vec2.end()) != vec1.end());
+}
+
+vector<transition> getTransFromStateBy(const state& p, const symbol& s, const Automaton& aut)
+{
+    vector<transition> trans_from_p_by_s;
+
+    for (const transition& trans : aut[p])
+    {
+        if (trans.GetSymbol() == s)
+            trans_from_p_by_s.push_back(trans);
+    }
+
+    return trans_from_p_by_s;
+}
+
+/* Returns the number of transitions from a state that share the symbol with at least another
+ * transition also from that state. */
+unsigned int getNumbNonDetTransFrom(const state& p, const Automaton& aut, bool ignoreLeafRules)
+{
+    unsigned int n_trans = 0;
+
+    set<symbol> symbols_from_p = getSymbolsFrom(aut, p, ignoreLeafRules);
+    for (const symbol& s : symbols_from_p)
+    {
+        unsigned int n_trans_from_p_by_s = (getTransFromStateBy(p, s, aut)).size();
+        if (n_trans_from_p_by_s >= 2)
+            n_trans += n_trans_from_p_by_s;
+    }
+
+    return n_trans;
+}
+
+/* Returns a tuple containing two measures of the non-determinism of the given automaton:
+ * 1) the number of states (%) from which there are non-determisitic transitions (top-down),
+ *    i.e., at least 2 transitions with the same symbol.
+ * 2) the number of transitions (%) for which there is another transition from the same state
+ *    and with the same symbol.  */
+tuple<float, float> measureNonDeterminism(const Automaton& aut, unsigned int numb_transitions)
+{
+    unsigned int n_states = 0;
+    stateSet states = getUsedStates(aut);
+    unsigned int n_states_total = /*getNumbUsedStates(aut, true)*/ states.size() - 1;
+    unsigned int n_trans = 0;
+    unsigned int n_trans_total = (numb_transitions==0) ? getNumbTransitions(aut, true) : numb_transitions;
+
+    for (const state& s : states)
+    {
+        unsigned int n_nonDetTrans = getNumbNonDetTransFrom(s, aut);
+
+        if (n_nonDetTrans >= 2)
+            n_states++;
+
+        n_trans += n_nonDetTrans;
+    }
+
+    float n_states_perc = (n_states_total == 0)? 0.0 : ((float) n_states / (float) n_states_total) * 100.0;
+    float n_trans_perc  = (n_trans_total == 0)?  0.0 : ((float) n_trans / (float) n_trans_total) * 100.0;
+
+    return std::make_tuple(n_states_perc, n_trans_perc);
+}
+
+tuple<float, float> measureNonDeterminism(const AutData& autData, unsigned int numb_transitions)
+{
+    return measureNonDeterminism(getAut(autData), numb_transitions);
+}
+
+void measureNonDeterminism_ui(string filename, bool output_human)
+{
+    AutData autData = parseFromFile(filename);
+    tuple<float,float> nd_tup = measureNonDeterminism(autData);
+
+    if (output_human)
+        outputText("ND_states: " + convert2DecStr(std::get<0>(nd_tup))
+                   + "%\tND_trans: " + convert2DecStr(std::get<1>(nd_tup)) + "%\n");
+    else
+        outputText(convert2DecStr(std::get<0>(nd_tup)) + "\t" + convert2DecStr(std::get<1>(nd_tup)) + "\t");
 }
 
 bool measureTO_aux(const vector<state>& vec1, const vector<state>& vec2)
@@ -813,16 +1063,36 @@ string measureTransOverlaps_str2Dec(const AutData& autData)
     return measureTransOverlaps_str2Dec(getAut(autData));
 }
 
+void measureTransOverlaps_ui(string filename, bool output_human)
+{
+    AutData autData = parseFromFile(filename);
+    vector<float> overlaps = measureTransOverlaps(autData);
+
+    if (output_human)
+        outputText("TOL_1: " + convert2DecStr(overlaps.at(0))
+                   + "%\tTOL_2: " + convert2DecStr(overlaps.at(1))
+                   + "%\tTOL_3: " + convert2DecStr(overlaps.at(2)) + "\n");
+    else
+        outputText(convert2DecStr(overlaps.at(0)) + "\t" +
+                    convert2DecStr(overlaps.at(1)) + "\t" +
+                    convert2DecStr(overlaps.at(2)) + "\t");
+
+}
+
 /* Returns the value of numbStates(smaller) / numbStates(larger) in %. */
 float measureStatesReduction(const Automaton& smaller, const Automaton& larger, bool ignoreInitialSt)
 {
+    return measureStatesReduction(getNumbUsedStates(smaller,ignoreInitialSt), getNumbUsedStates(larger,ignoreInitialSt));
+}
+
+float measureStatesReduction(unsigned int q_smaller, unsigned int q_larger)
+{
     float states_red;
 
-    if (getNumbUsedStates(larger,ignoreInitialSt) == 0)
+    if (q_larger == 0)
         states_red = 100;
     else
-        states_red = ((float) getNumbUsedStates(smaller,ignoreInitialSt)
-                      / (float) getNumbUsedStates(larger,ignoreInitialSt)) * (float) 100;
+        states_red = ((float) q_smaller / (float) q_larger) * (float) 100;
 
     return states_red;
 }
@@ -834,13 +1104,18 @@ float measureStatesReduction(const AutData& smaller, const AutData& larger, bool
 
 float measureTransitionsReduction(const Automaton& smaller, const Automaton& larger, bool ignoreInitialSt)
 {
+    return measureTransitionsReduction(getNumbTransitions(smaller,ignoreInitialSt), getNumbTransitions(larger,ignoreInitialSt));
+}
+
+float measureTransitionsReduction(unsigned int delta_smaller, unsigned int delta_larger)
+{
     float transitions_red;
 
-    if (getNumbTransitions(larger,ignoreInitialSt) == 0)
+    if (delta_larger == 0)
         transitions_red = 100;
     else
-        transitions_red = ((float) getNumbTransitions(smaller,ignoreInitialSt)
-                           / (float) getNumbTransitions(larger,ignoreInitialSt)) * (float) 100;
+        transitions_red = ((float) delta_smaller
+                           / (float) delta_larger) * (float) 100;
 
     return transitions_red;
 }
@@ -850,9 +1125,20 @@ float measureTransitionsReduction(const AutData& smaller, const AutData& larger,
     return measureTransitionsReduction(getAut(smaller), getAut(larger),ignoreInitialSt);
 }
 
+float measureTransDensReduction(float transDens_smaller, float transDens_larger)
+{
+    if (transDens_larger <= 0.0)
+        return 0.0;
+
+    return (transDens_smaller / transDens_larger) * (float) 100;
+}
+
 float measureTransDensReduction(const Automaton& smaller, const Automaton& larger, bool ignoreInitialSt)
 {
-    return (getTransitionDensity(smaller,ignoreInitialSt) / getTransitionDensity(larger,ignoreInitialSt)) * (float) 100;
+    float transDens_smaller = getTransitionDensity(smaller,ignoreInitialSt);
+    float transDens_larger  = getTransitionDensity(larger,ignoreInitialSt);
+
+    return measureTransDensReduction(transDens_smaller, transDens_larger);
 }
 
 float measureTransDensReduction(const AutData& smaller, const AutData& larger, bool ignoreInitialSt)
@@ -866,112 +1152,30 @@ string convert2DecStr(float f)
     return (boost::format("%.2f") % f).str();
 }
 
-void printAut(const Automaton& aut, stateDict* dict) {
-    dict = NULL;        // I've given up printing fancy state names and considering whether the initial state is implicit or not.
 
-    /* Print the used states */
-    stateSet states = getUsedStates(aut);
-    std::cout << "Q contains " << states.size() << " (used) states. ";
-    std::cout << "Their representations are: ";
-    for (const state& s : states)
-    {
-        std::cout << s << " (" << (dict==NULL ? "" : translateState(aut, *dict, s)) << ") ";
-    }
-    std::cout << "\n";
 
-    /* Print the final states */
-    finalStateSet f = aut.GetFinalStates();
-    std::cout << "F contains " << f.size() << " final states. They are: ";
-    for (const state& s : f)
-    {
-        std::cout << s << " (" << (dict==NULL ? "" : translateState(aut, *dict, s)) << " ) ";
-    }
-    std::cout << "\n";
+void printAut(const Automaton& aut, stateDict& sDict)
+{
+    Automaton aut2 = removeInitialState(aut);
+    outputText(autToStringTimbuk(aut2,sDict));
+}
 
-    std::cout << "Sigma contains " << getNumbSymbols(aut) << " symbols "
-              << "and their average rank is " << getAvgRank(aut) << ".\n";
+void printAut(const AutData& autData, stateDict& sDict)
+{
+    printAut(getAut(autData), sDict);
+}
 
-    /* Print the alphabet  */
-    /*
-    // Get a pointer to the alphabet of type OnTheFlyAlphabet which is being used already
-    // by 'aut'.
-    std::shared_ptr<onTheFlyAlphabet> alph;
-    if (!(alph = std::dynamic_pointer_cast<onTheFlyAlphabet>(aut.GetAlphabet())))
-    {	// The alphabet should be ExplicitTreeAut::OnTheFlyAlphabet,
-        // if it isn't then throw 'false'.
-        assert(false);
-    }
-
-    std::cout << "Sigma contains " << sizeOfSigma(alph) << " symbols: ";
-    for (auto stringSymbolPair : alph->GetSymbolDict())
-    {	// For each symbol,
-        // print its external representation (which includes its ranking) followed by its internal representation.
-        std::cout << stringSymbolPair.first << " (" << stringSymbolPair.second << "); ";
-    }
-    std::cout << "\n";
-    */
-
-    /* Print the transitions */
-    std::cout << "Delta contains " << getNumbTransitions(aut) << " transitions";
-
-    std::cout << ":\n";
-    for (const lv_transition& trans : aut)
-    {
-        std::cout << "    [parent state = " << trans.GetParent();
-        std::cout << ", symbol = " << trans.GetSymbol();
-        std::cout << ", children states = " << Convert::ToString(trans.GetChildren());
-        std::cout << "]\n";
-    }
-
-    std::cout << std::flush;
+void printAut(const Automaton& aut)
+{
+    Automaton aut2 = removeInitialState(aut);
+    outputText(autToStringTimbuk(aut2));
 }
 
 void printAut(const AutData& autData)
 {
-
     printAut(getAut(autData));
-
 }
 
-string autToStringTimbuk(const Automaton& aut)
-{
-    string result;
-
-    result = "Ops \n";
-    result += "Automaton anonymous \n";
-
-    stateSet states = getUsedStates(aut);
-    result += "States ";
-    for (const state& s : states)
-    {
-        result += std::to_string(s) + " ";
-    }
-    result += "\n";
-
-    finalStateSet f = aut.GetFinalStates();
-    result += "Final States ";
-    for (const state& s : f)
-    {
-        result += std::to_string(s) + " ";
-    }
-    result += "\n";
-
-    result += "Transitions \n";
-    for (const lv_transition& trans : aut)
-    {
-        result += std::to_string(trans.GetSymbol()) + "(";
-
-        for(unsigned int i=0; i<trans.GetChildren().size(); i++)
-        {
-            result += std::to_string(trans.GetChildren().at(i));
-            if (i < trans.GetChildren().size()-1)
-                result += ",";
-        }
-        result += ") -> " + std::to_string(trans.GetParent()) + "\n";
-    }
-
-    return result;
-}
 
 void printAutData(const Automaton& aut, bool printTransOverlap) {
     /* Print the used states. */

@@ -35,11 +35,11 @@ class MetaData
         float initial_greatest_sigma = 0;
         float initial_greatest_ranking = 0;
         float initial_greatest_dens = 0;     // The average transition density in the automata prior to any reduction.
-        vector<float> initial_avg_transOverlap;
-        vector<float> initial_greatest_transOverlap;
+        vector<float> initial_avg_transOverlap = {};
+        vector<float> initial_greatest_transOverlap = {};
         MetaData();
         void inc();
-        void updateInitialAvg(unsigned int q, unsigned int delta, unsigned int sigma, float avg_ranking, float dens, vector<float> transOverlap = {});
+        void updateInitialAvg(unsigned int q, unsigned int delta, unsigned int sigma = 0, float avg_ranking = 0.0, float dens = 0.0, vector<float> transOverlap = {});
         void updateInitialAvg(const Automaton& aut);
         void updateInitialAvg(const AutData& autData);
         void checkInitialGreatest(unsigned int q, unsigned int delta, unsigned int sigma, float ranking, float dens, vector<float> transOverlap = {});
@@ -85,9 +85,9 @@ class TestData
         void updateAvgTimes(vector<float> times_relations, vector<float> times_quotientings, vector<float> times_prunings, float time_consCheck);
         void updateAvgTimes(vector<float> times_relations, vector<float> times_quotientings, vector<float> times_prunings);
         void checkGreatestReductions(float q_red, float delta_red, float transDens_red);
-        void updateAvgReductions(float q_red, float delta_red, float transDens_red);
+        void updateAvgReductions(float q_red, float delta_red, float transDens_red = 0.0);
         void updateAvgReductions(const AutData& autData_smaller, const AutData& autData_larger);
-        void updateAvgSizes(unsigned int q, unsigned int delta, float transDens);
+        void updateAvgSizes(unsigned int q, unsigned int delta, float transDens = 0.0);
         void updateAvgSizes(const AutData& autData);
         void updateReductionBuckets(float q_red, float delta_red, float transDens_red);
         void printReductionBuckets(const string filename);
@@ -99,6 +99,7 @@ class TestData
         string avg_delta_red_str2Dec();
         string avg_transDens_red_str2Dec();
         string avg_time_str2Dec();
+        vector<string> avg_sizes_relations_str2Dec();
 };
 
 
@@ -134,13 +135,31 @@ extern MetaData emptyMetaData;
 extern TestData emptyTestData;
 extern Timeout emptyTimeout;
 
+extern int NO_OUT;
+extern int LOG;
+extern int STD_OUT_HUMAN;
+extern int STD_OUT_MACHINE;
+
 void log_time(string log_filename, float time);
-void log_autSizes(string log_filename, const Automaton& aut, float time = 0.0);
-void log_autSizes(string log_filename, const AutData& autData, float time = 0.0);
+
+void log_autSizes(string log_filename, const Automaton& aut, bool ignoreInitialSt = false);
+void log_autSizes(string log_filename, const AutData& autData, bool ignoreInitialSt = false);
+void log_autSizes(string log_filename,
+                  unsigned int q, unsigned int delta/*, float time = 0.0*/);
+
 void log_autTransOverlap(string log_filename, const AutData& autData);
+
 void log_autReduction(string log_filename,
                       const Automaton& aut_smaller, const Automaton& aut_larger, float time = 0.0);
 void log_autReduction(string log_filename, const AutData& autData_smaller, const AutData autData_larger, float time = 0.0);
+void log_autReduction(string log_filename, float q_red, float delta_red, float transDens_red, float time = 0.0);
+void log_autReduction(string log_filename, float q_red, float delta_red);
+void log_autReduction(string log,
+                      unsigned int q_smaller, unsigned int dt_smaller,
+                      unsigned int q_larger, unsigned int dt_larger);
+
+void log_autNonDet(string log_filename, const Automaton& aut, unsigned int numb_transitions = 0);
+void log_autNonDet(string log_filename, const AutData& autData, unsigned int numb_transitions = 0);
 
 
 #endif // STATISTICALRESULTS_H

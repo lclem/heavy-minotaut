@@ -13,6 +13,9 @@
 
 #include "common.hh"
 
+TimePoint Epoch(std::chrono::seconds(0));      // 0 seconds since the Epoch
+
+
 void exit_with_error(const char* msg)
 {
 	cerr << msg << endl;
@@ -44,36 +47,37 @@ unsigned int vectorUIntsAt(const vector<unsigned int>& vec, const unsigned int p
 	return result;
 }
 
-// Delete me later
-chr_time startTimer()
+Time time_now()
 {
-    return std::chrono::high_resolution_clock::now();
+    return Clock::now();
 }
 
-chr_time time_now()
+Time startTimer()
 {
-    return std::chrono::high_resolution_clock::now();
+    return time_now();
 }
 
-unsigned long int secsSinceEpoch()
+bool timerNotStarted(Time timer)
 {
-    chr_time time = time_now();
-    auto duration = time.time_since_epoch();
-    unsigned long int secs = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
-    return secs;
+    return timer == Epoch;
 }
 
-long unsigned int elapsed_sec(long unsigned int secsSinceEpoch_start)
+seconds elapsedSec(Time start)
 {
-    unsigned long int secsSinceEpoch_now = secsSinceEpoch();
-    return (secsSinceEpoch_now - secsSinceEpoch_start);
+    return (std::chrono::duration_cast<std::chrono::microseconds>(time_now()-start).count() / (float) 1000000);
 }
 
-// Delete me later
-float elapsed_sec(chr_time start)
+int genRandomNumb(int min, int max)
 {
-    auto elapsed = std::chrono::high_resolution_clock::now() - start;
-    return std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / (float) 1000000;
+    srand (time(NULL));
+    int number = rand() % (max-min+1) + min;
+    return number;
+}
+
+/* Generates an "unique" (random) id between 1 and 1000 */
+unsigned int unique_id()
+{
+    return genRandomNumb(1, 1000);
 }
 
 unsigned int min(unsigned int a, unsigned int b)
@@ -94,6 +98,19 @@ vector<string> convertCharPtArrayToStrVector(char* array[], int start, int end)
 
 /* String and IO functions */
 
+string vectorIntsToString(const vector<long unsigned int> & vec)
+{
+    string str;
+    for (unsigned int j=0; j<vec.size(); j++)
+        str += std::to_string(vec.at(j)) + ",";
+    return str;
+}
+
+void printVectorInts(const vector<long unsigned int> & vec)
+{
+    std::cout << vectorIntsToString(vec) << "\n";
+}
+
 void printVectorArrayInts(const vector<unsigned int[2]>& vec)
 {
 	for (unsigned int j=0; j<vec.size(); j++){
@@ -103,12 +120,12 @@ void printVectorArrayInts(const vector<unsigned int[2]>& vec)
 	}
 }
 
-string vectorVectorIntsToString(const vector<vector<int> >& vec)
+string vectorVectorIntsToString(const vector<vector<long unsigned int> >& vec)
 {
 	string str;
 	
 	for (unsigned int i=0; i<vec.size(); i++){
-		vector<int> subvec = vec.at(i);
+        vector<long unsigned int> subvec = vec.at(i);
 		for (unsigned int j=0; j<subvec.size(); j++)
 			str += std::to_string(subvec.at(j)) + ",";
 		str += "\n";
@@ -117,7 +134,7 @@ string vectorVectorIntsToString(const vector<vector<int> >& vec)
 	return str;
 }
 
-void printVectorVectorInts(const vector<vector<int> >& vec)
+void printVectorVectorInts(const vector<vector<long unsigned int> >& vec)
 {
 	std::cout << vectorVectorIntsToString(vec) << "\n";
 }
@@ -164,6 +181,19 @@ string localTime2()
     return s;
 }
 
+bool convertStrToBool(string str)
+{
+    if (str == "true" || str == "True" || str == "TRUE")
+        return true;
+    if (str == "false" || str == "False" || str == "FALSE")
+        return false;
+
+    exit_with_error("Wrong parameter given to the function convertStrToBool.");
+
+    return false;
+
+}
+
 void writeToFile(string filename, string text, bool overwrite)
 {
 
@@ -192,4 +222,28 @@ string appendStrings(string s1, string s2, string s3, string s4)
     std::stringstream ss;
     ss << s1 << s2 << s3 << s4;
     return ss.str();
+}
+
+/* Creates the full directory specified if it doesn't exist already. */
+void createDir(string dir)
+{
+    const char* path_char = dir.c_str();
+    boost::filesystem::path path(path_char);
+    boost::system::error_code returnedError;
+    boost::filesystem::create_directories(path, returnedError);
+
+    if (returnedError)
+        exit_with_error("Error creating directory " + dir);
+}
+
+/* Deletes the file specified from the filesystem. */
+void deleteFile(string filename)
+{
+    boost::system::error_code ec;
+    bool exists = boost::filesystem::remove(filename,ec);
+
+    if (ec)
+        outputText("Error when attempting to delete file " + filename + ".\n");
+    if (!exists) outputText("Warning: attempted to remove a file which did not exist - "
+                            + filename + ".\n");
 }

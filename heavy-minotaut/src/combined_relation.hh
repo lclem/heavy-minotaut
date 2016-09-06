@@ -25,7 +25,7 @@
 vector<vector<bool> > combined_relation(const AutData &autData, /*vector<vector<bool> >& W_combined,*/
                       const unsigned int la_dw, const unsigned int la_up,
                       const unsigned int numb_states, const unsigned int greatest_symbol,
-                      seconds timeout_start = 0, seconds timeout = 0);
+                      Time& timeout_start = Epoch, seconds timeout = 0);
 
 
 #endif // COMBINED_PREORDER_H

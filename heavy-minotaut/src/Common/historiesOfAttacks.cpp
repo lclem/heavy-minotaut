@@ -20,7 +20,7 @@
 /* Functions for creating empy histories */
 
 /* Could Global Histories be unified as well? */
-globalHist newHistoryGlocalAttacks(unsigned int numb_states)
+globalHist newHistoryGlobalAttacks(unsigned int numb_states)
 {
     globalHist history;
 

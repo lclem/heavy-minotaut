@@ -199,7 +199,6 @@ void eraseCodeAllSteps(vector<vector<Step*> >& steps)
     for (vector<Step*>& vec : steps)
         for (Step* step : vec)
             step->eraseCode();
-
 }
 
 /* Extends the attack 'steps'. */
@@ -263,6 +262,18 @@ void initializeW(const Automaton& aut, vector<vector<bool> >& W,
 
 }
 
+vector<vector<bool> > invRel(const vector<vector<bool> >& rel)
+{
+    unsigned int n = rel.size();
+    vector<vector<bool> > rel_inv = createBoolMatrix(n,n,false);
+
+    for (unsigned int p=0; p<n; p++)
+        for (unsigned int q=0; q<n; q++)
+            if (rel[q][p]) rel_inv[p][q] = true;
+
+    return rel_inv;
+}
+
 /* Computes the transitive closure of a binary relation represented by the
  * boolean matrix W. It uses Warshall's algorithm. */
 vector<vector<bool> > transClosure(vector<vector<bool> > W/*, const unsigned int n*/)
@@ -293,7 +304,7 @@ void asymTransClosure(vector<vector<bool> >& W, const unsigned int n) {
 /* Extracts the strict subrelation of R. The function keeps in R only
  * those (x,y) s.t. xRy but not yRx.
  * Note: This is not the same as the asymmetric restriction of R. */
-void extractStrictRelation(vector<vector<bool> >& R)
+vector<vector<bool> > strictRel(vector<vector<bool> > R)
 {
     unsigned int n = R.size();
 
@@ -303,10 +314,12 @@ void extractStrictRelation(vector<vector<bool> >& R)
                 R.at(i).at(j) = false;
                 R.at(j).at(i) = false;
             }
+
+    return R;
 }
 
-bool areInRel(const state p, const state q, const vector<vector<bool> >& W) {
-
+bool areInRel(const state p, const state q, const vector<vector<bool> >& W)
+{
     try
     {
         return W.at(p).at(q);
@@ -321,8 +334,8 @@ bool areInRel(const state p, const state q, const vector<vector<bool> >& W) {
     return W.at(p).at(q);
 }
 
-void printStateBinRelation(const stateDiscontBinaryRelation& binRel) {
-
+void printStateBinRelation(const stateDiscontBinaryRelation& binRel)
+{
     std::cout << binRel << "\n";
 }
 
@@ -333,7 +346,6 @@ void convertBinaryRelToBoolMatrix(const Automaton& aut,
                                   const stateDiscontBinaryRelation& binRel,
                                   vector<vector<bool> >& W)
 {    
-    //VATA::Util::BinaryRelation matrix = binRel.getMatrix();
 
     stateSet usedStates = getUsedStates(aut);
     state initialState  = getInitialState(aut);
@@ -348,7 +360,7 @@ void convertBinaryRelToBoolMatrix(const Automaton& aut,
             }
             else
                 W.at(p).at(q) = binRel.get(p,q);
-                        //matrix.data_[binRel.getDict().TranslateFwd(p)*matrix.rowSize_+binRel.getDict().TranslateFwd(q)];
+
 
 }
 
@@ -437,7 +449,72 @@ bool areInRelIter(const vector<state>& states1, const vector<state>& states2, co
         return ok_inRel;
 }
 
-vector<vector<bool> > generateIdRelation(const unsigned int n) {
+vector<state> findGreaterStates(const vector<vector<bool> >& rel, state p)
+{
+    vector<state> result;
+
+    unsigned int size = rel.size();
+    for (unsigned int q=0; q<size; q++)
+    {
+        if (rel[p][q]) result.push_back(q);
+    }
+
+    return result;
+}
+
+/* This function returns a vector with all the tuples (vector) of states which are
+ * greater w.r.t. rel than tup[0..i].
+ * Called with i=tup.size()-1, the tuples returned are those greater than tup. */
+vector<vector<state> > findGreaterTupStates(const Automaton& aut, const vector<vector<bool> >& rel,
+                                            vector<vector<state> >& greaterStatesCach,
+                                            const vector<state>& tup, unsigned int i,
+                                            Time &timeout_start = Epoch, seconds timeout = 0)
+{
+    check_timeout(aut, timeout_start, timeout);
+
+    vector<vector<state> > tup_result;
+
+    if (i==0)
+    {
+        vector<state> greaterStates = greaterStatesCach.at(tup.at(0));
+        if (greaterStates.empty())
+        {
+            greaterStates = findGreaterStates(rel, tup.at(0));
+            greaterStatesCach.at(tup.at(0)) = greaterStates;
+        }
+        for (state p : greaterStates)
+            tup_result.push_back({p});
+    }
+    else
+    {
+        const vector<vector<state> > tup_res_rec = findGreaterTupStates(aut, rel, greaterStatesCach, tup, i-1, timeout_start, timeout);
+        vector<state> greaterStates = greaterStatesCach.at(tup.at(i));
+        if (greaterStates.empty())
+        {
+            greaterStates = findGreaterStates(rel, tup.at(i));
+            greaterStatesCach.at(tup.at(i)) = greaterStates;
+        }
+        for (state p : greaterStates)
+            for (vector<state> tup2 : tup_res_rec)
+            {
+                tup2.push_back(p);
+                tup_result.push_back(tup2);
+            }
+    }
+
+    return tup_result;
+}
+
+vector<vector<state> > findGreaterTupStates(const Automaton& aut, const vector<vector<bool> >& rel,
+                                            vector<vector<state> >& greaterStatesCach,
+                                            const vector<state>& tup, Time &timeout_start, seconds timeout)
+{
+    return findGreaterTupStates(aut, rel, greaterStatesCach, tup, tup.size()-1, timeout_start, timeout);
+}
+
+vector<vector<bool> > generateIdRelation(const unsigned int greatest_state)
+{
+    unsigned int n = greatest_state+1;
     vector<bool> column(n);
     vector<vector<bool> > W(n, column);
 
@@ -450,6 +527,13 @@ vector<vector<bool> > generateIdRelation(const unsigned int n) {
         }
 
     return W;
+}
+
+vector<vector<bool> > generateIdRelation(const AutData& autData, const unsigned int greatest_state)
+{
+    unsigned int n = (greatest_state==0) ? getGreatestUsedState(autData)+1 : greatest_state+1;
+
+    return generateIdRelation(n);
 }
 
 unsigned int getSizeOfRel(const vector<vector<bool> >& W) {

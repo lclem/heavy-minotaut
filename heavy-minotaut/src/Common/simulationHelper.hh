@@ -19,6 +19,7 @@
 #include <boost/variant/get.hpp>
 
 #include "../Common/common.hh"
+#include "../Common/exceptions.hh"
 #include "../Common/executionOptions.hh"
 #include "../step.hh"
 #include "automatonHelper.hh"
@@ -95,17 +96,24 @@ void extendAttack(vector<vector<Step*> >& steps, const unsigned int depth, vecto
 void printVectorVectorMaybeTransitions(const vector<vector<MaybeTransition> >&);
 typerank getRank(const symbol);
 void initializeW(const Automaton &aut, vector<vector<bool> >& W, const unsigned int n, const bool strict=false, const bool default_value=true);
+vector<vector<bool> > invRel(const vector<vector<bool> >& rel);
 vector<vector<bool> > transClosure(vector<vector<bool> >);
 void asymTransClosure(vector<vector<bool> >&, const unsigned int);
-void extractStrictRelation(vector<vector<bool> >&);
+vector<vector<bool> > strictRel(vector<vector<bool> > R);
 bool areInRel(state, state, const vector<vector<bool> >&);
 bool areInRelIter(const vector<state>&, const vector<state>&, const vector<vector<bool> >&, const bool);
-vector<vector<bool> > generateIdRelation(const unsigned int);
+vector<vector<bool> > generateIdRelation(const unsigned int greatest_state);
+vector<vector<bool> > generateIdRelation(const AutData& autData, const unsigned int greatest_state = 0);
 unsigned int getSizeOfRel(const vector<vector<bool> >&/*, const unsigned int*/);
 vector<transition> moveInitialTransitionsToBeginning(vector<transition>& vec);
 vector<transition> orderTransBySymbolsRankings(vector<transition>& vec, const vector<typerank>& ranks);
 vector<pair<transition, size_t> > &vectorVectorPairTransitionIntAt(vector<vector<pair<transition, size_t> > > &, const state);
 void convertBinaryRelToBoolMatrix(const Automaton &aut, const stateDiscontBinaryRelation &binRel, vector<vector<bool> > &W);
+vector<state> findGreaterStates(const vector<vector<bool> >& rel, state p);
+vector<vector<state> > findGreaterTupStates(const Automaton& aut, const vector<vector<bool> >& rel,
+                                            vector<vector<state> >& greaterStatesCach,
+                                            const vector<state>& tup,
+                                            Time &timeout_start = Epoch, seconds timeout = 0);
 string w2String(const Automaton &aut, const vector<vector<bool> >&, const stateDict* dict = NULL);
 void printW(const Automaton &aut, const vector<vector<bool> >&, const stateDict* = NULL);
 void printStateBinRelation(const stateDiscontBinaryRelation& binRel);
