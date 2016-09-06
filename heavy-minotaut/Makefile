@@ -30,15 +30,18 @@
 
 #############################################################################################
 
+# /usr/local/{include,lib} are already included in the compilation path by default
+
 INCLUDE=-Iinclude/
 INCLUDE_LVATA=-I../ondrik-libvata/include
-INCLUDE_BOOST=-I~/Desktop/boost/
 LIBS_ADD=-L../ondrik-libvata/build/src
-LIBS=-lvata
+LIBS=-lvata -lboost_system -lboost_filesystem
 SRCS= $(wildcard src/*.cpp) $(wildcard src/*\/*.cpp) $(wildcard src/*\/*\/*.cpp)  # depth = 3
 OBJS = $(patsubst src/%.cpp,build/%.o,$(SRCS))
 TESTERS= $(wildcard testers/*.cpp) $(wildcard testers/*\/*.cpp) $(wildcard testers/*\/*\/*.cpp)  # depth = 3
 OBJS_TESTERS = $(patsubst %.cpp,build/%.o,$(TESTERS))
+OBJS_NOT_OPT = $(patsubst src/%.cpp,buildNotOpt/%.o,$(SRCS))
+OBJS_TESTERS_NOT_OPT = $(patsubst %.cpp,buildNotOpt/%.o,$(TESTERS))
 RM=rm -rf
 
 # $< feeds the first dependency to the command
@@ -48,23 +51,41 @@ RM=rm -rf
 
 all: clean minotaut
 
-# Add -O3 for the optimized compilation
-# Add -g for debugging (enables symbols) and also -O0
+notOpt: clean_NotOpt minotaut_NotOpt
+
 
 minotaut: $(OBJS) $(OBJS_TESTERS)
-	g++ -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $(INCLUDE_BOOST) $^ $(LIBS_ADD) $(LIBS) -o $@
+	g++ -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $^ $(LIBS_ADD) $(LIBS) -o $@ 
 
 build/testers/%.o: testers/%.cpp 
-	g++ -c -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $(INCLUDE_BOOST) $< -o $@
+	g++ -c -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $< -o $@ 
 
 build/%.o: src/%.cpp 
-	g++ -c -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $(INCLUDE_BOOST) $< -o $@
+	g++ -c -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $< -o $@ 
 
 delete_objs:
 	$(RM) $(OBJS) $(OBJS_TESTERS)
 
 clean: delete_objs
 	$(RM) minotaut
+
+
+# For debugging we use -g (enables symbols) and also the lowest optimization level -O0
+
+minotaut_NotOpt: $(OBJS_NOT_OPT) $(OBJS_TESTERS_NOT_OPT)
+	g++ -g -O0 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $^ $(LIBS_ADD) $(LIBS) -o $@ 
+
+buildNotOpt/testers/%.o: testers/%.cpp 
+	g++ -g -c -O0 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $< -o $@ 
+
+buildNotOpt/%.o: src/%.cpp 
+	g++ -g -c -O0 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $< -o $@ 
+
+delete_objs_NotOpt:
+	$(RM) $(OBJS_NOT_OPT) $(OBJS_TESTERS_NOT_OPT)
+
+clean_NotOpt: delete_objs_NotOpt
+	$(RM) minotaut_NotOpt
 
 
 #############################################################################################

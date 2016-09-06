@@ -17,12 +17,18 @@ To download Heavy MinOTAut, run
 $ git clone https://github.com/ric-almeida/heavy-minotaut.git
 
 
+Pre-requisites
+==============
+
+1) libvata (see ../ondrik-libvata/README for installation info; an additional prerequisite of libvata is g++ >= 4.8.0)
+
+2) filesystem library from boost (version >= 1.54.0)
+
+
 Installation
 ============
 
-1) Install libvata (see ../ondrik-libvata/README for more info; an additional prerequisite of libvata is g++ >= 4.8.0)
-
-2) Run $ make minotaut
+Run $ make minotaut
 
 
 Input Format
@@ -73,24 +79,13 @@ c(q2, q2) -> q2
 Usage
 =====
 
-Please use one of the following: 
-
- 	 - './minotaut minimize [ options ] la-dw la-up i_dir1 i_dir2 ...' to apply Heavy(la-dw,la-up) to each automaton (with timbuk syntax) in the dirs provided. 
-	 Options are as follows: 
-		 - [-output=o_dir]: if provided, each automaton from a file named ta.timbuk will be minimized and saved in the output_dir as a file named ta_minimized_with_Heavy(x,y).timbuk (default: no output). 
-		 - [-max_numb_tests=n]: to limit to n the number of automata to process in each i_dir. 
-		 - [-timeout=t]: to limit to t seconds each application of the Heavy algorithm (default: 1800). 
-		 - [-BranchPR=d]: to set to d the depth of the pre-refinement performed before each computation of the lookahead downward simulation. (advanced) 
-
-	 - './minotaut minimize_and_complement [ options ] la-dw la-up i_dir1 i_dir2 ...' to apply Heavy(la-dw,la-up) to each automaton (as described in the 'minimize' option) in the input dirs provided, and complement them using libvata's algorithm. For most automata, the minimization speeds up significantly the complement operation. 
-	 Options are as follows: 
-		 - [-output=o_dir]: if provided, each automaton from a file named ta.timbuk will be minimized and complemented and saved in the output_dir as a file named ta_minimized_with_Heavy(x,y)_and_complemented.timbuk (default: no output). 
-		 - [-max_numb_tests=n]: to limit to n the number of automata to process in each i_dir. 
-		 - [-timeout=t]: to limit to t seconds each application of the Heavy algorithm (default: 1800). 
-		 - [-BranchPR=d]: to set to d the depth of the pre-refinement performed before each computation of the lookahead downward simulation. (advanced) 
+Please run ./minotaut -help
 
 
 Publications
 ============
 
-- R. Almeida, L. Holik, R. Mayr. Reduction of Non-deterministic Tree Automata. TACAS'16.
+- R. Almeida, L. Holik, R. Mayr. Reduction of Non-deterministic Tree Automata. pages 717–735. Springer Berlin Heidelberg, Berlin, Heidelberg, 2016. TACAS'16.
+- R. Almeida. Reducing Nondeterministic Tree Automata by Adding Transitions. Submitted to MEMICS'16.
+
+

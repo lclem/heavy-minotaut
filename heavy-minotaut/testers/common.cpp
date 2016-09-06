@@ -37,6 +37,14 @@ string sanitizeDirStr(string dir_str)
 
 }
 
+vector<string> mapSanitizeDirStrs(vector<string> dirs)
+{
+    for (unsigned int i=0; i<dirs.size(); i++)
+        dirs[i] = sanitizeDirStr(dirs[i]);
+
+    return dirs;
+}
+
 /* Gets the names of all files at the root of the directory given. */
 vector<filename> getAllFilenames(const string directory_str)
 {

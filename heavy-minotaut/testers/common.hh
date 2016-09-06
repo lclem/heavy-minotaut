@@ -26,6 +26,7 @@ vector<string> getAllSubfolders(const string folder_str);
 string appendTimbukFilename(string filename, string sufix);
 string getLocalFilename(const string filename);
 string sanitizeDirStr(string dir_str);
+vector<string> mapSanitizeDirStrs(vector<string> dirs);
 
 
 #endif // COMMON_H

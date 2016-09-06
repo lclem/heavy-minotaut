@@ -14,9 +14,6 @@
 
 #include "minimizationTechniques_testers.hh"
 
-unsigned int pr_depth = -1;
-
-
 void printSummary_procedure(unsigned int la_dw, unsigned int la_up, MetaData& metadata,
                                    TestData& testData_ru,
                                    TestData& testData_quot,   Timeout& timeout_quot,
@@ -199,30 +196,100 @@ static void printSummary_quotienting(unsigned int la_dw, unsigned int la_up,
 
 }
 
-void heavy_tester(unsigned int la_dw, unsigned int la_up,
-                  string input_dir, string output_dir, unsigned int max_numb_tests,
-                  string log_avgs)
+void heavy_tester_file(unsigned int la_dw, unsigned int la_up,
+                       vector<filename> input_files, string output_dir, filename output_filename,
+                       unsigned int max_numb_tests, int outputStat_type)
 {
 
     MetaData metaData         =  MetaData();
     TestData testData_heavy   =  TestData();
     Timeout timeout_heavy     =  Timeout();
 
-    string log = "log_of_heavy(" + std::to_string(la_dw) + "," + std::to_string(la_up) +
-            ")_input_folder:" + getLocalFilename(input_dir) + "_date:" + localTime() + ".txt";
-    writeToFile(log,
-                "Each row of the following table contains results of an experiment on a particular tree automaton. The columns should be read as follows: \n"
-                "\t Filename - the name of the file containing the input tree automaton (TA) \n"
-                "\t Q_i - the number of states of TA \n"
-                "\t Dt_i - the number of transitions of TA \n"
-                "\t TD_i - the transition density of TA \n"
-               // "\t (TOL_i_1,TOL_i_2,TOL_I_3) - the transitions-overlapping tuple in TA (consult the references in README.txt for more details) \n"
-                "\t Q_h(%) - the percentage of the number of states that remained after the application of the Heavy algorithm on TA \n"
-                "\t Dt_h(%) - the percentage of the number of transitions that remained after the application of the Heavy algorithm on TA \n"
-                "\t TD_h(%) - the t.d. of TA vs the t.d. of Heavy(TA) \n"
-                "\t T_h - the time (in seconds) taken to minimize TA with Heavy \n \n");
-/*    writeToFile(log, "Filename\tQ_i\tDt_i\tTD_i\t(TOL_i_1,TOL_i_2,TOL_I_3)\t"
-                "Q_h(%)\tDt_h(%)\tTD_h(%)\tT_h \n"); */
+    const unsigned int numb_tests = max_numb_tests==0 ? input_files.size() : min(max_numb_tests,input_files.size());
+
+    outputText("\n");
+    for (unsigned int i=0; i<numb_tests; i++)
+    {
+        string filename = input_files.at(i);
+        string local_filename = getLocalFilename(filename);
+
+        /* Parsing and taking data from the automaton. */
+        stateDict sDict;
+        AutData autData = parseFromFile(filename, sDict);
+
+        if (getNumbTransitions(getAut(autData)) == 0)
+        {
+            outputText("This automaton has 0 transitions and therefore will be skipped. \n");
+            continue;
+        }
+
+        if (outputStat_type == STD_OUT_HUMAN)
+            outputText("\tAutomaton " + std::to_string(i+1) + " - " + filename + ":\t");
+
+        AutData autData_heavy = applyHeavy(autData, metaData, la_dw, la_up,
+                                           testData_heavy, timeout_heavy, outputStat_type);
+
+        /* Output resulting automaton (optional). */
+        if (output_dir != "")
+        {
+            string aut_heavy_filename;
+            if (output_filename != "")
+                aut_heavy_filename = appendTimbukFilename(sanitizeDirStr(output_dir) + output_filename,
+                                     "");
+            else
+                aut_heavy_filename = appendTimbukFilename(sanitizeDirStr(output_dir) + local_filename,
+                                    "_minimized_with_Heavy(" + std::to_string(la_dw) + "," +
+                                    std::to_string(la_up) + ")");
+            saveAutToFile(autData_heavy, aut_heavy_filename);
+        }
+
+    }
+
+    if (outputStat_type == STD_OUT_HUMAN)
+    {
+        outputText("\nAverage results:\t"
+                   "Q_i: "               + metaData.initial_avg_q_str2Dec()
+                   + "\tTrans_i: "         + metaData.initial_avg_delta_str2Dec()
+                   + "\tTransDens_i: "     + metaData.initial_avg_transDens_str2Dec()
+                   + "\tQ_f/Q_i: "         + testData_heavy.avg_q_red_str2Dec() + "%"
+                   + "\tTrans_f/Trans_i: " + testData_heavy.avg_delta_red_str2Dec() + "%"
+                   + "\tTD_f/TD_i: "       + testData_heavy.avg_transDens_red_str2Dec() + "%"
+                   + "\tTime: "            + testData_heavy.avg_time_str2Dec() + "s"
+                   + "\t");
+        outputText("\nThe End\n");
+    }
+
+}
+
+void heavy_tester_dir(unsigned int la_dw, unsigned int la_up,
+                  string input_dir, string output_dir, unsigned int max_numb_tests,
+                  int outputStat_type, string log_avgs)
+{
+
+    MetaData metaData         =  MetaData();
+    TestData testData_heavy   =  TestData();
+    Timeout timeout_heavy     =  Timeout();
+
+    string log;
+    if (outputStat_type == LOG)
+    {
+        log = "log_of_heavy(" + std::to_string(la_dw) + "," + std::to_string(la_up) +
+                ")_input_folder:" + getLocalFilename(input_dir) + "_date:" + localTime() + ".txt";
+        writeToFile(log,
+                    "Each row of the following table contains results of an experiment on a particular tree automaton. The columns should be read as follows: \n"
+                    "\t Filename - the name of the file containing the input tree automaton (TA) \n"
+                    "\t Q_i - the number of states of TA (includes the implicit initial state) \n"
+                    "\t Dt_i - the number of transitions of TA (includes the initial transitions) \n"
+                    "\t TD_i - the transition density of TA (includes the initial state/transitions/symbols) \n"
+                   // "\t (TOL_i_1,TOL_i_2,TOL_I_3) - the transitions-overlapping tuple in TA (consult the references in README.txt for more details) \n"
+                    "\t Q_h(%) - the percentage of the number of states that remained after the application of the Heavy algorithm on TA \n"
+                    "\t Dt_h(%) - the percentage of the number of transitions that remained after the application of the Heavy algorithm on TA \n"
+                    "\t TD_h(%) - t.d. of Heavy(TA) / t.d. of TA \n"
+                    "\t T_h - the time (in seconds) taken to minimize TA with Heavy \n \n");
+        writeToFile(log, "Filename\tQ_i\tDt_i\tTD_i\t");
+        // writeToFile(log, "(TOL_i_1,TOL_i_2,TOL_I_3)\t");
+        writeToFile(log, "Q_h(%)\tDt_h(%)\tTD_h(%)\tT_h \n");
+    }
 
     vector<filename> filenames = getAllFilenames(input_dir);
     const unsigned int numb_tests = max_numb_tests==0 ? filenames.size() : min(max_numb_tests,filenames.size());
@@ -231,10 +298,7 @@ void heavy_tester(unsigned int la_dw, unsigned int la_up,
     {
         string filename = filenames.at(i);
         string local_filename = getLocalFilename(filename);
-        writeToFile(log, local_filename + "\t");
-
-        string header  = "\tAutomaton " + std::to_string(i+1) + " - " + filename + ": ";
-        outputText(header);   
+        if (outputStat_type == LOG) writeToFile(log, local_filename + "\t");
 
         /* Parsing and taking data from the automaton. */
         stateDict stateDict;
@@ -247,8 +311,11 @@ void heavy_tester(unsigned int la_dw, unsigned int la_up,
             continue;
         }
 
+        if (outputStat_type == STD_OUT_HUMAN)
+            outputText("\tAutomaton " + std::to_string(i+1) + " - " + filename + ": ");
+
         AutData autData_heavy = applyHeavy(autData, metaData, la_dw, la_up,
-                                           testData_heavy, timeout_heavy, log);
+                                           testData_heavy, timeout_heavy, outputStat_type, log);
 
         /* Output resulting automaton (optional). */
         if (output_dir != "")
@@ -256,8 +323,516 @@ void heavy_tester(unsigned int la_dw, unsigned int la_up,
             string aut_heavy_filename = appendTimbukFilename(sanitizeDirStr(output_dir) + local_filename,
                                     "_minimized_with_Heavy(" + std::to_string(la_dw) + "," +
                                     std::to_string(la_up) + ")");
-            saveToFile(autData_heavy, aut_heavy_filename);
+            saveAutToFile(autData_heavy, aut_heavy_filename);
         }
+
+    }
+
+    if (outputStat_type == LOG)
+        outputText("\n"
+               "  Please consult the file ./" + log +
+               " for individual experimental results concerning each automaton in the folder " +
+               getLocalFilename(input_dir) + ".\n \n");
+
+    if (outputStat_type == STD_OUT_HUMAN)
+    {
+        outputText("\nAverage results:\t"
+                   "Q_i: "               + metaData.initial_avg_q_str2Dec()
+                   + "\tTrans_i: "         + metaData.initial_avg_delta_str2Dec()
+                   + "\tTransDens_i: "     + metaData.initial_avg_transDens_str2Dec()
+                   + "\tQ_f/Q_i: "         + testData_heavy.avg_q_red_str2Dec() + "%"
+                   + "\tTrans_f/Trans_i: " + testData_heavy.avg_delta_red_str2Dec() + "%"
+                   + "\tTD_f/TD_i: "       + testData_heavy.avg_transDens_red_str2Dec() + "%"
+                   + "\tTime: "            + testData_heavy.avg_time_str2Dec() + "s"
+                   + "\t");
+        outputText("\nThe End\n");
+    }
+    if (!log_avgs.empty())
+        writeToFile(log_avgs,
+                    getLocalFilename(input_dir) + "\t" +
+                    metaData.initial_avg_q_str2Dec() + "\t" +
+                    metaData.initial_avg_delta_str2Dec() + "\t" +
+                    metaData.initial_avg_transDens_str2Dec() + "\t" +
+                    //metaData.initial_avg_transOverlap_str() + "\t" +
+                    testData_heavy.avg_q_red_str2Dec() + "\t" +
+                    testData_heavy.avg_delta_red_str2Dec() + "\t" +
+                    testData_heavy.avg_transDens_red_str2Dec() + "\t" +
+                    testData_heavy.avg_time_str2Dec() + "\n");
+
+}
+
+void heavy_tester_dir(unsigned int la_dw, unsigned int la_up,
+                      vector<string> input_dirs, string output_dir, unsigned int numb_tests,
+                      int outputStat_type, string log_avgs_)
+{
+    string log_avgs;
+    if (outputStat_type == LOG)
+    {
+        log_avgs = log_avgs_=="" ? "log_of_avg_values_of_applying_heavy(" + std::to_string(la_dw) + "," +
+                           std::to_string(la_up) + ")_date:" + localTime() + ".txt" : log_avgs_;
+        writeToFile(log_avgs, "Each row of the following table contains avg. result values "
+                              "respecting experiments on the automata in a given directory. "
+                              "The columns should be read as follows: \n"
+                              "\t Folder - the name of the folder that this avg. values correspond to \n"
+                              "\t Q_i - the avg. number of states of the TA (includes the implicit initial state) \n"
+                              "\t Dt_i - the avg. number of transitions of the TA (includes the initial transitions) \n"
+                              "\t TD_i - the avg. transition density of the TA (includes the initial state/transitions/symbols) \n"
+    /*                          "\t (TOL_i_1,TOL_i_2,TOL_I_3) - the avg. transitions-overlapping tuple in TA (consult the references in README.txt for more details) \n"    */
+                              "\t Q_h(%) - the avg. percentage of the number of states that remained after the application of the Heavy algorithm on the TA \n"
+                              "\t Dt_h(%) - the avg. percentage of the number of transitions that remained after the application of the Heavy algorithm on the TA \n"
+                              "\t TD_h(%) - the avg. relation (t.d. of Heavy(TA) / t.d. of the TA) \n"
+                              "\t T_h - the avg. time (in seconds) taken to compute Heavy(TA) \n \n");
+        writeToFile(log_avgs, "Folder\t\tQ_i\tDt_i\tTD_i\t"
+                    "Q_h(%)\tDt_h(%)\tTD_h(%)\tT_h \n");
+    }
+
+    for (const string input_dir : input_dirs)
+        heavy_tester_dir(la_dw, la_up, input_dir, output_dir, numb_tests, outputStat_type, log_avgs);
+
+    if (outputStat_type == LOG)
+    {
+        writeToFile(log_avgs, "\nThe End\n");
+        outputText("The End. Please consult file " + log_avgs + " for average result values for each input directory. \n");
+    }
+}
+
+void procedure_tester(string input_dir, unsigned int max_numb_tests, string log_avgs)
+{
+
+    MetaData metaData         =  MetaData();
+    TestData testData_ru      =  TestData();
+    TestData testData_ruq     =  TestData();
+    Timeout timeout_ruq       =  Timeout();
+    TestData testData_ruqp    =  TestData();
+    Timeout timeout_ruqp      =  Timeout();
+    TestData testData_heavy11 =  TestData();
+    Timeout timeout_heavy11   =  Timeout();
+    TestData testData_heavy24 =  TestData();
+    Timeout timeout_heavy24   =  Timeout();
+
+    string log = "log_of_Procedure_input_folder:" + getLocalFilename(input_dir) + "_date:" + localTime() + ".txt";
+    writeToFile(log, "Each row of the following table contains results of an experiment on a particular tree automaton. The columns should be read as follows: \n"
+                          "\t Folder - the name of the folder that these values correspond to \n"
+                          "\t Q_i - the number of states of the TA (includes the implicit initial state) \n"
+                          "\t Dt_i - the number of transitions of the TA (includes the initial transitions) \n"
+                          "\t Q_ru(%) - the percentage of the number of states that remained after removing useless (ru) states on the TA \n"
+                          "\t Dt_ru(%) - the percentage of the number of transitions that remained after removing useless (ru) states on the TA \n"
+                          "\t T_ru - the time (in seconds) taken to remove useless (ru) states on the TA \n"
+                          "\t Q_ruq(%) - the percentage of the number of states that remained after ru + quotienting with dw-simulation the TA \n"
+                          "\t Dt_ruq(%) - the percentage of the number of transitions that remained after ru + quotienting with dw-simulation the TA \n"
+                          "\t T_ruq - the time (in seconds) taken to ru + quotient with dw-simulation the TA \n"
+                          "\t Q_ruqp(%) - the percentage of the number of states that remained after ruq + pruning with P(id,strict dw-sim.) the TA \n"
+                          "\t Dt_ruqp(%) - the percentage of the number of transitions that remained after ruq + pruning with P(id,strict dw-sim.) the TA \n"
+                          "\t T_ruqp - the time (in seconds) taken to ruq + pruning with P(id,strict dw-sim.) the TA \n"
+                          "\t Q_h(1,1)(%) - the percentage of the number of states that remained after the application of the Heavy(1,1) algorithm on the TA \n"
+                          "\t Dt_h(1,1)(%) - the percentage of the number of transitions that remained after the application of the Heavy(1,1) algorithm on the TA \n"
+                          "\t T_h(1,1) - the time (in seconds) taken to compute Heavy(1,1) on the TA \n"
+                          "\t Q_h(2,4)(%) - the percentage of the number of states that remained after the application of the Heavy(2,4) algorithm on the TA \n"
+                          "\t Dt_h(2,4)(%) - the percentage of the number of transitions that remained after the application of the Heavy(2,4) algorithm on the TA \n"
+                          "\t T_h(2,4) - the time (in seconds) taken to compute Heavy(2,4) on the TA \n");
+    writeToFile(log, "Folder\t\tQ_i\tDt_i\t"
+                          "Q_ru(%)\tDt_ru(%)\tT_ru\t"
+                          "Q_ruq(%)\tDt_ruq(%)\tT_ruq\t"
+                          "Q_ruqp(%)\tDt_ruqp(%)\tT_ruqp\t"
+                          "Q_h(1,1)(%)\tDt_h(1,1)(%)\tT_h(1,1)\t"
+                          "Q_h(2,4)(%)\tDt_h(2,4)(%)\tT_h(2,4) \n");
+
+
+    vector<filename> filenames = getAllFilenames(input_dir);
+    const unsigned int numb_tests = max_numb_tests==0 ? filenames.size() : min(max_numb_tests,filenames.size());
+
+    for (unsigned int i=0; i<numb_tests; i++)
+    {
+        string filename = filenames.at(i);
+        string local_filename = getLocalFilename(filename);
+        writeToFile(log, local_filename + "\t");
+
+        string header  = "\tAutomaton " + std::to_string(i+1) + " - " + filename + ": ";
+        outputText(header);
+
+        /* Parsing and taking data from the automaton. */
+        stateDict stateDict;
+        AutData autData = parseFromFile(filename, stateDict);
+
+        if (getNumbTransitions(getAut(autData)) == 0)
+        {
+            string output_msg = "This automaton has 0 transitions and therefore will be skipped. \n";
+            outputText(output_msg);
+            continue;
+        }
+
+        applyProcedure(autData, metaData, testData_ru,
+                       testData_ruq, timeout_ruq, testData_ruqp, timeout_ruqp,
+                       testData_heavy11, timeout_heavy11, testData_heavy24, timeout_heavy24, log, false, false);
+
+        outputText("Done. \n");
+    }
+
+    outputText("\n"
+               "  Please consult the file ./" + log +
+               " for individual experimental results concerning each automaton in the folder " +
+               getLocalFilename(input_dir) + ".\n \n");
+
+    if (!log_avgs.empty())
+        writeToFile(log_avgs,
+                    getLocalFilename(input_dir) + "\t" +
+                    metaData.initial_avg_q_str2Dec() + "\t" +
+                    metaData.initial_avg_delta_str2Dec() + "\t" +
+                    testData_ru.avg_q_red_str2Dec() + "\t" +
+                    testData_ru.avg_delta_red_str2Dec() + "\t" +
+                    testData_ru.avg_time_str2Dec() + "\t" +
+                    testData_ruq.avg_q_red_str2Dec() + "\t" +
+                    testData_ruq.avg_delta_red_str2Dec() + "\t" +
+                    testData_ruq.avg_time_str2Dec() + "\t" +
+                    testData_ruqp.avg_q_red_str2Dec() + "\t" +
+                    testData_ruqp.avg_delta_red_str2Dec() + "\t" +
+                    testData_ruqp.avg_time_str2Dec() + "\t" +
+                    testData_heavy11.avg_q_red_str2Dec() + "\t" +
+                    testData_heavy11.avg_delta_red_str2Dec() + "\t" +
+                    testData_heavy11.avg_time_str2Dec() + "\t" +
+                    testData_heavy24.avg_q_red_str2Dec() + "\t" +
+                    testData_heavy24.avg_delta_red_str2Dec() + "\t" +
+                    testData_heavy24.avg_time_str2Dec() + "\n");
+
+}
+
+void procedure_tester(vector<string> input_dirs, unsigned int numb_tests, string log_avgs_)
+{
+    string log_avgs = log_avgs_=="" ? "log_of_avg_values_of_applying_Procedure_date:" + localTime() + ".txt" : log_avgs_;
+    writeToFile(log_avgs, "Each row of the following table contains avg. result values "
+                          "respecting experiments on the automata in a given directory. "
+                          "The columns should be read as follows: \n"
+                          "\t Folder - the name of the folder that this avg. values correspond to \n"
+                          "\t Q_i - the avg. number of states of the TA (includes the implicit initial state) \n"
+                          "\t Dt_i - the avg. number of transitions of the TA (includes the initial transitions) \n"
+                          "\t Q_ru(%) - the avg. percentage of the number of states that remained after removing useless (ru) states on the TA \n"
+                          "\t Dt_ru(%) - the avg. percentage of the number of transitions that remained after removing useless (ru) states on the TA \n"
+                          "\t T_ru - the avg. time (in seconds) taken to remove useless (ru) states on the TA \n"
+                          "\t Q_ruq(%) - the avg. percentage of the number of states that remained after ru + quotienting with dw-simulation the TA \n"
+                          "\t Dt_ruq(%) - the avg. percentage of the number of transitions that remained after ru + quotienting with dw-simulation the TA \n"
+                          "\t T_ruq - the avg. time (in seconds) taken to ru + quotient with dw-simulation the TA \n"
+                          "\t Q_ruqp(%) - the avg. percentage of the number of states that remained after ruq + pruning with P(id,strict dw-sim.) the TA \n"
+                          "\t Dt_ruqp(%) - the avg. percentage of the number of transitions that remained after ruq + pruning with P(id,strict dw-sim.) the TA \n"
+                          "\t T_ruqp - the avg. time (in seconds) taken to ruq + pruning with P(id,strict dw-sim.) the TA \n"
+                          "\t Q_h(1,1)(%) - the avg. percentage of the number of states that remained after the application of the Heavy(1,1) algorithm on the TA \n"
+                          "\t Dt_h(1,1)(%) - the avg. percentage of the number of transitions that remained after the application of the Heavy(1,1) algorithm on the TA \n"
+                          "\t T_h(1,1) - the avg. time (in seconds) taken to compute Heavy(1,1) on the TA \n"
+                          "\t Q_h(2,4)(%) - the avg. percentage of the number of states that remained after the application of the Heavy(2,4) algorithm on the TA \n"
+                          "\t Dt_h(2,4)(%) - the avg. percentage of the number of transitions that remained after the application of the Heavy(2,4) algorithm on the TA \n"
+                          "\t T_h(2,4) - the avg. time (in seconds) taken to compute Heavy(2,4) on the TA \n");
+    writeToFile(log_avgs, "Folder\t\tQ_i\tDt_i\t"
+                          "Q_ru(%)\tDt_ru(%)\tT_ru\t"
+                          "Q_ruq(%)\tDt_ruq(%)\tT_ruq\t"
+                          "Q_ruqp(%)\tDt_ruqp(%)\tT_ruqp\t"
+                          "Q_h(1,1)(%)\tDt_h(1,1)(%)\tT_h(1,1)\t"
+                          "Q_h(2,4)(%)\tDt_h(2,4)(%)\tT_h(2,4) \n");
+
+    for (const string input_dir : input_dirs)
+        procedure_tester(input_dir, numb_tests, log_avgs);
+
+    writeToFile(log_avgs, "\nThe End\n");
+
+    outputText("The End. Please consult file " + log_avgs + " for average result values for each input directory. \n");
+}
+
+void heavy_with_sat_tester_file(unsigned int la_dw, unsigned int la_up,
+                                unsigned int la_dw_sat, unsigned int la_up_sat, unsigned int sat_version,
+                                int max_attempts_sat,
+                                vector<filename> input_files, string output_dir, unsigned int max_numb_tests,
+                                int outputStat_type)
+{
+    MetaData metaData = MetaData();
+    TestData testData = TestData();
+    Timeout timeout   = Timeout();
+
+    const unsigned int numb_tests = max_numb_tests==0 ? input_files.size() : min(max_numb_tests,input_files.size());
+
+    outputText("\n");
+    for (unsigned int i=0; i<numb_tests; i++)
+    {
+        string filename = input_files.at(i);
+        string local_filename = getLocalFilename(filename);
+
+        /* Parsing and taking data from the automaton. */
+        stateDict sDict;
+        AutData autData = parseFromFile(filename, sDict);
+
+        if (getNumbTransitions(getAut(autData)) == 0)
+        {
+            string output_msg = "This automaton has 0 transitions and therefore will be skipped. \n";
+            outputText(output_msg);
+            continue;
+        }
+
+        if (outputStat_type == STD_OUT_HUMAN)
+            outputText("\tAutomaton " + std::to_string(i+1) + " - " + filename + ":\t");
+
+        AutData autData_final = applyHeavyWithSat(autData, la_dw, la_up,
+                                                  la_dw_sat, la_up_sat, sat_version, max_attempts_sat,
+                                                  metaData, testData, timeout, outputStat_type);
+
+        /* Output resulting automaton (optional). */
+        if (output_dir != "")
+        {
+            string aut_final_filename = appendTimbukFilename(sanitizeDirStr(output_dir) + local_filename,
+                                    "_minimized_with_Heavy(" + std::to_string(la_dw) + "," +
+                                    std::to_string(la_up) + ")_with_Saturation(" +
+                                    std::to_string(la_dw_sat) + "," + std::to_string(la_up_sat) + ")");
+            saveAutToFile(autData_final, sDict, aut_final_filename);
+        }
+    }
+
+    if (outputStat_type == STD_OUT_HUMAN)
+    {
+        outputText("\nAverage results:\t"
+                   "Q_i: "               + metaData.initial_avg_q_str2Dec()
+                   + "\tTrans_i: "         + metaData.initial_avg_delta_str2Dec()
+                   + "\tTransDens_i: "     + metaData.initial_avg_transDens_str2Dec()
+                   + "\tQ_f/Q_i: "         + testData.avg_q_red_str2Dec() + "%"
+                   + "\tTrans_f/Trans_i: " + testData.avg_delta_red_str2Dec() + "%"
+                   + "\tTD_f/TD_i: "       + testData.avg_transDens_red_str2Dec() + "%"
+                   + "\tTime: "            + testData.avg_time_str2Dec() + "s"
+                   + "\t");
+        outputText("\nThe End\n");
+    }
+}
+
+void heavy_with_sat_tester_dir(unsigned int la_dw, unsigned int la_up,
+                               unsigned int la_dw_sat, unsigned int la_up_sat, unsigned int sat_version,
+                               int max_attempts_sat,
+                               string input_dir, string output_dir, unsigned int max_numb_tests,
+                               int outputStat_type, string log_avgs)
+{
+    MetaData metaData = MetaData();
+    TestData testData = TestData();
+    Timeout timeout   = Timeout();
+
+    string log;
+    if (outputStat_type == LOG)
+    {
+        log = "log_of_heavy(" + std::to_string(la_dw) + "," + std::to_string(la_up) +
+            ")_with_saturation(" + std::to_string(la_dw_sat) + "," + std::to_string(la_up_sat) +
+            ")_max_attempts_sat=" + std::to_string(max_attempts_sat) +
+            "_input_folder:" + getLocalFilename(input_dir) + "_date:" + localTime() + ".txt";
+        writeToFile(log,
+                    "Each row of the following table contains results of an experiment on a particular tree automaton. The columns should be read as follows: \n"
+                    "\t Filename - the name of the file containing the input tree automaton (TA) \n"
+                    "\t Q_i - the number of states of TA (includes the implicit initial state) \n"
+                    "\t Dt_i - the number of transitions of TA (includes the initial transitions) \n"
+                    "\t TD_i - the transition density of TA (includes the initial state/transitions/symbols) \n"
+                   // "\t (TOL_i_1,TOL_i_2,TOL_I_3) - the transitions-overlapping tuple in TA (consult the references in README.txt for more details) \n"
+                    "\t Q_f(%) - the percentage of the number of states that remained after the application of Heavy+Saturation on TA \n"
+                    "\t Dt_f(%) - the percentage of the number of transitions that remained after the application of Heavy+Saturation on TA \n"
+                    "\t TD_f(%) - the t.d. of Heavy+Saturation(TA) / the t.d. of TA vs \n"
+                    "\t T_f - the time (in seconds) taken to minimize TA with Heavy+Saturation \n \n");
+        writeToFile(log, "Filename\tQ_i\tDt_i\tTD_i\t");
+        // writeToFile(log, "(TOL_i_1,TOL_i_2,TOL_I_3)\t");
+        writeToFile(log, "Q_f(%)\tDt_f(%)\tTD_f(%)\tT_f \n");
+    }
+
+    vector<filename> filenames = getAllFilenames(input_dir);
+    const unsigned int numb_tests = max_numb_tests==0 ? filenames.size() : min(max_numb_tests,filenames.size());
+
+    for (unsigned int i=0; i<numb_tests; i++)
+    {
+        string filename = filenames.at(i);
+        string local_filename = getLocalFilename(filename);
+        if (outputStat_type == LOG) writeToFile(log, local_filename + "\t");
+
+        if (outputStat_type == STD_OUT_HUMAN)
+            outputText("\tAutomaton " + std::to_string(i+1) + " - " + filename + ":\t");
+
+        /* Parsing and taking data from the automaton. */
+        stateDict sDict;
+        AutData autData = parseFromFile(filename, sDict);
+
+        if (getNumbTransitions(getAut(autData)) == 0)
+        {
+            string output_msg = "This automaton has 0 transitions and therefore will be skipped. \n";
+            outputText(output_msg);
+            continue;
+        }
+
+        AutData autData_final = applyHeavyWithSat(autData, la_dw, la_up,
+                                                  la_dw_sat, la_up_sat, sat_version, max_attempts_sat,
+                                                  metaData, testData, timeout, outputStat_type, log);
+
+        /* Output resulting automaton (optional). */
+        if (output_dir != "")
+        {
+            string aut_final_filename = appendTimbukFilename(sanitizeDirStr(output_dir) + local_filename,
+                                    "_minimized_with_Heavy(" + std::to_string(la_dw) + "," +
+                                    std::to_string(la_up) + ")_with_Saturation(" +
+                                    std::to_string(la_dw_sat) + "," + std::to_string(la_up_sat) + ")");
+            saveAutToFile(autData_final, sDict, aut_final_filename);
+        }
+
+    }
+
+    if (outputStat_type == STD_OUT_HUMAN)
+    {
+        outputText("\nAverage results:\t"
+                   "Q_i: "               + metaData.initial_avg_q_str2Dec()
+                   + "\tTrans_i: "         + metaData.initial_avg_delta_str2Dec()
+                   + "\tTransDens_i: "     + metaData.initial_avg_transDens_str2Dec()
+                   + "\tQ_f/Q_i: "         + testData.avg_q_red_str2Dec() + "%"
+                   + "\tTrans_f/Trans_i: " + testData.avg_delta_red_str2Dec() + "%"
+                   + "\tTD_f/TD_i: "       + testData.avg_transDens_red_str2Dec() + "%"
+                   + "\tTime: "            + testData.avg_time_str2Dec() + "s"
+                   + "\t");
+        outputText("\nThe End\n");
+    }
+    else if (outputStat_type == LOG)
+        outputText("\n"
+               "  Please consult the file ./" + log +
+               " for individual experimental results concerning each automaton in the folder " +
+               getLocalFilename(input_dir) + ".\n \n");
+
+    if (!log_avgs.empty())
+        writeToFile(log_avgs,
+                    getLocalFilename(input_dir) + "\t" +
+                    metaData.initial_avg_q_str2Dec() + "\t" +
+                    metaData.initial_avg_delta_str2Dec() + "\t" +
+                    metaData.initial_avg_transDens_str2Dec() + "\t" +
+                    //metaData.initial_avg_transOverlap_str() + "\t" +
+                    testData.avg_q_red_str2Dec() + "\t" +
+                    testData.avg_delta_red_str2Dec() + "\t" +
+                    testData.avg_transDens_red_str2Dec() + "\t" +
+                    testData.avg_time_str2Dec() + "\n");
+
+}
+
+void heavy_with_sat_tester_dir(unsigned int la_dw, unsigned int la_up,
+                               unsigned int la_dw_sat, unsigned int la_up_sat,
+                               unsigned int sat_version, unsigned int max_attempts_sat,
+                               vector<string> input_dirs, string output_dir, unsigned int numb_tests,
+                               int outputStat_type, string log_avgs_)
+{
+    string log_avgs = "";
+    if (outputStat_type == LOG)
+    {
+        log_avgs = log_avgs_=="" ? "log_of_avg_values_of_applying_heavy(" + std::to_string(la_dw) + "," +
+                                          std::to_string(la_up) + ")_with_saturation(" +
+                                          std::to_string(la_dw_sat) + "," + std::to_string(la_up_sat) +
+                                          ")_max_attempts_sat=" + std::to_string(max_attempts_sat) +
+                                          "_date:" + localTime() + ".txt" : log_avgs_;
+        writeToFile(log_avgs, "Each row of the following table contains avg. result values "
+                              "respecting experiments on the automata in a given directory. "
+                              "The columns should be read as follows: \n"
+                              "\t Folder - the name of the folder that this avg. values correspond to \n"
+                              "\t Q_i - the avg. number of states of the TA (includes the implicit initial state) \n"
+                              "\t Dt_i - the avg. number of transitions of the TA (includes the initial transitions) \n"
+                              "\t TD_i - the avg. transition density of the TA (includes the initial state/transitions/symbols) \n"
+    /*                          "\t (TOL_i_1,TOL_i_2,TOL_I_3) - the avg. transitions-overlapping tuple in TA (consult the references in README.txt for more details) \n"    */
+                              "\t Q_f(%) - the avg. percentage of the number of states that remained after the application of Heavy+Saturation on the TA \n"
+                              "\t Dt_f(%) - the avg. percentage of the number of transitions that remained after the application of Heavy+Saturation on the TA \n"
+                              "\t TD_f(%) - the avg. relation (t.d. of the Heavy+Saturation(TA) / t.d. of the TA)   \n"
+                              "\t T_f - the avg. time (in seconds) taken to compute Heavy+Saturation(TA) \n \n");
+        writeToFile(log_avgs, "Folder\t\tQ_i\tDt_i\tTD_i\t"
+                    "Q_f(%)\tDt_f(%)\tTD_f(%)\tT_f \n"); /* */
+    }
+
+    for (const string input_dir : input_dirs)
+        heavy_with_sat_tester_dir(la_dw, la_up, la_dw_sat, la_up_sat, sat_version,
+                                  max_attempts_sat, input_dir, output_dir, numb_tests, outputStat_type, log_avgs);
+
+    if (outputStat_type == LOG)
+    {
+        writeToFile(log_avgs, "\nThe End\n");
+        outputText("The End. Please consult file " + log_avgs + " for average result values for each input directory. \n");
+    }
+}
+
+void heavy_with_sat_versionsComparer(unsigned int la_dw, unsigned int la_up,
+                                     unsigned int la_dw_sat, unsigned int la_up_sat, int max_attempts_sat,
+                                     string input_dir, unsigned int max_numb_tests, string log_avgs)
+{
+    MetaData metaData       = MetaData();
+    TestData testData_h     = TestData();
+    Timeout timeout_h       = Timeout();
+    TestData testData_hs1   = TestData();
+    Timeout timeout_hs1     = Timeout();
+    TestData testData_hs1L  = TestData();
+    Timeout timeout_hs1L    = Timeout();
+    TestData testData_hs2   = TestData();
+    Timeout timeout_hs2     = Timeout();
+    TestData testData_hs2L  = TestData();
+    Timeout timeout_hs2L    = Timeout();
+    TestData testData_hs2L2 = TestData();
+    Timeout timeout_hs2L2   = Timeout();
+
+    string log = "log_of_comparing_heavy(" + std::to_string(la_dw) + "," +
+            std::to_string(la_up) + ")_with_heavy_combined_with_different_versions_of_saturation(" +
+            std::to_string(la_dw_sat) + "," + std::to_string(la_up_sat) + ")_max_attempts_sat=" +
+            std::to_string(max_attempts_sat) + "_input_folder:"+ getLocalFilename(input_dir)+ "_date:" + localTime() + ".txt";
+    writeToFile(log, "Each row of the following table contains avg. result values "
+                     "respecting experiments on the automata in a given directory. "
+                     "The columns should be read as follows: \n"
+                     "\t Folder - the name of the folder that this values correspond to \n"
+                     "\t Q_i - the number of states of the TA (includes the implicit initial state) \n"
+                     "\t Dt_i - the number of transitions of the TA (includes the initial transitions) \n"
+                     "\t TD_i - the transition density of the TA (includes the initial state/transitions/symbols) \n"
+                     "\t Q_h(%) - the percentage of the number of states that remained after the application of Heavy on the TA \n"
+                     "\t Dt_h(%) - the percentage of the number of transitions that remained after the application of Heavy on the TA \n"
+                     "\t TD_h(%) - the avg. relation (the t.d. of the Heavy(TA) / the t.d. of the TA) \n"
+                     "\t T_h - the time (in seconds) taken to compute Heavy(TA) \n"
+                     "\t Q_h+s1(%) - the percentage of the number of states that remained after the application of Heavy+SaturationV1 on the TA \n"
+                     "\t Dt_h+s1(%) - the percentage of the number of transitions that remained after the application of Heavy+SaturationV1 on the TA \n"
+                     "\t TD_h+s1(%) - the avg. relation (the t.d. of the Heavy+SaturationV1(TA) / t.d. of the TA) \n"
+                     "\t T_h+s1 - the time (in seconds) taken to compute Heavy+SaturationV1(TA) \n"
+                     "\t Q_h+s1L(%) - the percentage of the number of states that remained after the application of Heavy+SaturationV1_with_inner_loop on the TA \n"
+                     "\t Dt_h+s1L(%) - the percentage of the number of transitions that remained after the application of Heavy+SaturationV1_with_inner_loop on the TA \n"
+                     "\t TD_h+s1L(%) - the avg. relation (t.d. of the Heavy+SaturationV1L(TA) / t.d. of the TA)  \n"
+                     "\t T_h+s1L - the time (in seconds) taken to compute Heavy+SaturationV1_with_inner_loop(TA) \n"
+                     "\t Q_h+s2(%) - the percentage of the number of states that remained after the application of Heavy+SaturationV2 on the TA \n"
+                     "\t Dt_h+s2(%) - the percentage of the number of transitions that remained after the application of Heavy+SaturationV2 on the TA \n"
+                     "\t TD_h+s2(%) - the avg. relation (t.d. of the Heavy+SaturationV2(TA) / t.d. of the TA) \n"
+                     "\t T_h+s2 - the time (in seconds) taken to compute Heavy+SaturationV2(TA) \n"
+                     "\t Q_h+s2L(%) - the percentage of the number of states that remained after the application of Heavy+SaturationV2_with_inner_loop on the TA \n"
+                     "\t Dt_h+s2L(%) - the percentage of the number of transitions that remained after the application of Heavy+SaturationV2_with_inner_loop on the TA \n"
+                     "\t TD_h+s2L(%) - the avg. relation (t.d. of the Heavy+SaturationV2_with_inner_loop(TA) / t.d. of the TA)  \n"
+                     "\t T_h+s2L - the time (in seconds) taken to compute Heavy+SaturationV2_with_inner_loop(TA) \n"
+                     "\t Q_h+s2L'(%) - the percentage of the number of states that remained after the application of Heavy+SaturationV2_with_inner_loop' on the TA \n"
+                     "\t Dt_h+s2L'(%) - the percentage of the number of transitions that remained after the application of Heavy+SaturationV2_with_inner_loop' on the TA \n"
+                     "\t TD_h+s2L'(%) - the avg. relation (t.d. of the Heavy+SaturationV2_with_inner_loop'(TA) / t.d. of the TA)  \n"
+                     "\t T_h+s2L'' - the time (in seconds) taken to compute Heavy+SaturationV2_with_inner_loop'(TA) \n"
+                     "\n");
+    writeToFile(log, "Folder\t\tQ_i\tDt_i\tTD_i\t"
+                     "Q_h(%)\tDt_h(%)\tTD_h(%)\tT_h\t"
+                     "Q_h+s1(%)\tDt_h+s1(%)\tTD_h+s1(%)\tT_h+s1\t"
+                     "Q_h+s1L(%)\tDt_h+s1L(%)\tTD_h+s1L(%)\tT_h+s1L\t"
+                     "Q_h+s2(%)\tDt_h+s2(%)\tTD_h+s2(%)\tT_h+s2\t"
+                     "Q_h+s2L(%)\tDt_h+s2L(%)\tTD_h+s2L(%)\tT_h+s2L\t"
+                     "Q_h+s2L'(%)\tDt_h+s2L'(%)\tTD_h+s2L'(%)\tT_h+s2L'\t"
+                     "\n");
+
+    vector<filename> filenames = getAllFilenames(input_dir);
+    const unsigned int numb_tests = max_numb_tests==0 ? filenames.size() : min(max_numb_tests,filenames.size());
+
+    for (unsigned int i=0; i<numb_tests; i++)
+    {
+        string filename = filenames.at(i);
+        string local_filename = getLocalFilename(filename);
+        writeToFile(log, local_filename + "\t");
+
+        string header  = "\tAutomaton " + std::to_string(i+1) + " - " + filename + ": ";
+        outputText(header);
+
+        /* Parsing and taking data from the automaton. */
+        stateDict stateDict;
+        AutData autData = parseFromFile(filename, stateDict);
+
+        if (getNumbTransitions(getAut(autData)) == 0)
+        {
+            string output_msg = "This automaton has 0 transitions and therefore will be skipped. \n";
+            outputText(output_msg);
+            continue;
+        }
+
+        compareHeavyWithSatVersions(autData, metaData, la_dw, la_up, la_dw_sat, la_up_sat, max_attempts_sat,
+                                    testData_h, timeout_h, testData_hs1, timeout_hs1, testData_hs1L, timeout_hs1L,
+                                    testData_hs2, timeout_hs2, testData_hs2L, timeout_hs2L, testData_hs2L2, timeout_hs2L2,
+                                    log);
 
         outputText("Done. \n");
     }
@@ -273,36 +848,86 @@ void heavy_tester(unsigned int la_dw, unsigned int la_up,
                     metaData.initial_avg_q_str2Dec() + "\t" +
                     metaData.initial_avg_delta_str2Dec() + "\t" +
                     metaData.initial_avg_transDens_str2Dec() + "\t" +
-                    //metaData.initial_avg_transOverlap_str() + "\t" +
-                    testData_heavy.avg_q_red_str2Dec() + "\t" +
-                    testData_heavy.avg_delta_red_str2Dec() + "\t" +
-                    testData_heavy.avg_transDens_red_str2Dec() + "\t" +
-                    testData_heavy.avg_time_str2Dec() + "\n");
+                    testData_h.avg_q_red_str2Dec() + "\t" +
+                    testData_h.avg_delta_red_str2Dec() + "\t" +
+                    testData_h.avg_transDens_red_str2Dec() + "\t" +
+                    testData_h.avg_time_str2Dec() + "\t" +
+                    testData_hs1.avg_q_red_str2Dec() + "\t" +
+                    testData_hs1.avg_delta_red_str2Dec() + "\t" +
+                    testData_hs1.avg_transDens_red_str2Dec() + "\t" +
+                    testData_hs1.avg_time_str2Dec() + "\t" +
+                    testData_hs1L.avg_q_red_str2Dec() + "\t" +
+                    testData_hs1L.avg_delta_red_str2Dec() + "\t" +
+                    testData_hs1L.avg_transDens_red_str2Dec() + "\t" +
+                    testData_hs1L.avg_time_str2Dec() + "\t" +
+                    testData_hs2.avg_q_red_str2Dec() + "\t" +
+                    testData_hs2.avg_delta_red_str2Dec() + "\t" +
+                    testData_hs2.avg_transDens_red_str2Dec() + "\t" +
+                    testData_hs2.avg_time_str2Dec() + "\t" +
+                    testData_hs2L.avg_q_red_str2Dec() + "\t" +
+                    testData_hs2L.avg_delta_red_str2Dec() + "\t" +
+                    testData_hs2L.avg_transDens_red_str2Dec() + "\t" +
+                    testData_hs2L.avg_time_str2Dec() + "\t" +
+                    testData_hs2L2.avg_q_red_str2Dec() + "\t" +
+                    testData_hs2L2.avg_delta_red_str2Dec() + "\t" +
+                    testData_hs2L2.avg_transDens_red_str2Dec() + "\t" +
+                    testData_hs2L2.avg_time_str2Dec() + "\t" +
+                    "\n");
 
 }
 
-void heavy_tester(unsigned int la_dw, unsigned int la_up,
-                  vector<string> input_dirs, string output_dir, unsigned int numb_tests, string log_avgs_)
+void heavy_with_sat_versionsComparer(unsigned int la_dw, unsigned int la_up,
+                                     unsigned int la_dw_sat, unsigned int la_up_sat, unsigned int max_attempts_sat,
+                                     const vector<string>& input_dirs, unsigned int numb_tests, string log_avgs_)
 {
-    string log_avgs = log_avgs_=="" ? "log_of_avg_values_of_applying_heavy(" + std::to_string(la_dw) + "," +
-                       std::to_string(la_up) + ")_date:" + localTime() + ".txt" : log_avgs_;
+    string log_avgs = log_avgs_=="" ? "log_of_avg_values_of_comparing_heavy(" + std::to_string(la_dw) + "," +
+                                      std::to_string(la_up) + ")_with_heavy_combined_with_different_versions_of_saturation(" +
+                                      std::to_string(la_dw_sat) + "," + std::to_string(la_up_sat) +
+                                      ")_max_attempts_sat=" + std::to_string(max_attempts_sat) +
+                                      "_date:" + localTime() + ".txt" : log_avgs_;
     writeToFile(log_avgs, "Each row of the following table contains avg. result values "
                           "respecting experiments on the automata in a given directory. "
                           "The columns should be read as follows: \n"
                           "\t Folder - the name of the folder that this avg. values correspond to \n"
-                          "\t Q_i - the avg. number of states of the TA \n"
-                          "\t Dt_i - the avg. number of transitions of the TA \n"
-                          "\t TD_i - the avg. transition density of the TA \n"
-/*                          "\t (TOL_i_1,TOL_i_2,TOL_I_3) - the avg. transitions-overlapping tuple in TA (consult the references in README.txt for more details) \n"    */
-                          "\t Q_h(%) - the avg. percentage of the number of states that remained after the application of the Heavy algorithm on the TA \n"
-                          "\t Dt_h(%) - the avg. percentage of the number of transitions that remained after the application of the Heavy algorithm on the TA \n"
-                          "\t TD_h(%) - the avg. relation: t.d. of the TA vs the t.d. of the Heavy(TA) \n"
-                          "\t T_h - the avg. time (in seconds) taken to compute Heavy(TA) \n \n");
-/*    writeToFile(log_avgs, "Folder\t\tQ_i\tDt_i\tTD_i\t(TOL_i_1,TOL_i_2,TOL_I_3)"
-                "Q_h(%)\tDt_h(%)\tTD_h(%)\tT_h \n");    */
+                          "\t Q_i - the avg. number of states of the TA (includes the implicit initial state) \n"
+                          "\t Dt_i - the avg. number of transitions of the TA (includes the initial transitions) \n"
+                          "\t TD_i - the avg. transition density of the TA (includes the initial state/transitions/symbols) \n"
+                          "\t Q_h(%) - the avg. percentage of the number of states that remained after the application of Heavy on the TA \n"
+                          "\t Dt_h(%) - the avg. percentage of the number of transitions that remained after the application of Heavy on the TA \n"
+                          "\t TD_h(%) - the avg. relation (t.d. of the Heavy(TA) / t.d. of the TA) \n"
+                          "\t T_h - the avg. time (in seconds) taken to compute Heavy(TA) \n"
+                          "\t Q_h+s1(%) - the avg. percentage of the number of states that remained after the application of Heavy+SaturationV1 on the TA \n"
+                          "\t Dt_h+s1(%) - the avg. percentage of the number of transitions that remained after the application of Heavy+SaturationV1 on the TA \n"
+                          "\t TD_h+s1(%) - the avg. relation (t.d. of the Heavy+SaturationV1(TA) / t.d. of the TA) \n"
+                          "\t T_h+s1 - the avg. time (in seconds) taken to compute Heavy+SaturationV1(TA) \n"
+                          "\t Q_h+s1L(%) - the avg. percentage of the number of states that remained after the application of Heavy+SaturationV1_with_inner_loop on the TA \n"
+                          "\t Dt_h+s1L(%) - the avg. percentage of the number of transitions that remained after the application of Heavy+SaturationV1_with_inner_loop on the TA \n"
+                          "\t TD_h+s1L(%) - the avg. relation (t.d. of the Heavy+SaturationV1L(TA) / t.d. of the TA) \n"
+                          "\t T_h+s1L - the avg. time (in seconds) taken to compute Heavy+SaturationV1_with_inner_loop(TA) \n"
+                          "\t Q_h+s2(%) - the avg. percentage of the number of states that remained after the application of Heavy+SaturationV2 on the TA \n"
+                          "\t Dt_h+s2(%) - the avg. percentage of the number of transitions that remained after the application of Heavy+SaturationV2 on the TA \n"
+                          "\t TD_h+s2(%) - the avg. relation (t.d. of the Heavy+SaturationV2(TA) / t.d. of the TA) \n"
+                          "\t T_h+s2 - the avg. time (in seconds) taken to compute Heavy+SaturationV2(TA) \n"
+                          "\t Q_h+s2L(%) - the avg. percentage of the number of states that remained after the application of Heavy+SaturationV2_with_inner_loop on the TA \n"
+                          "\t Dt_h+s2L(%) - the avg. percentage of the number of transitions that remained after the application of Heavy+SaturationV2_with_inner_loop on the TA \n"
+                          "\t TD_h+s2L(%) - the avg. relation (t.d. of the Heavy+SaturationV2_with_inner_loop(TA) / t.d. of the TA) \n"
+                          "\t T_h+s2L - the avg. time (in seconds) taken to compute Heavy+SaturationV2_with_inner_loop(TA) \n"
+                          "\t Q_h+s2L'(%) - the avg. percentage of the number of states that remained after the application of Heavy+SaturationV2_with_inner_loop' on the TA \n"
+                          "\t Dt_h+s2L'(%) - the avg. percentage of the number of transitions that remained after the application of Heavy+SaturationV2_with_inner_loop' on the TA \n"
+                          "\t TD_h+s2L'(%) - the avg. relation (t.d. of the Heavy+SaturationV2_with_inner_loop'(TA) / t.d. of the TA) \n"
+                          "\t T_h+s2L' - the avg. time (in seconds) taken to compute Heavy+SaturationV2_with_inner_loop'(TA) \n"
+                          "\n");
+    writeToFile(log_avgs, "Folder\t\tQ_i\tDt_i\tTD_i\t"
+                          "Q_h(%)\tDt_h(%)\tTD_h(%)\tT_h\t"
+                          "Q_h+s1(%)\tDt_h+s1(%)\tTD_h+s1(%)\tT_h+s1\t"
+                          "Q_h+s1L(%)\tDt_h+s1L(%)\tTD_h+s1L(%)\tT_h+s1L\t"
+                          "Q_h+s2(%)\tDt_h+s2(%)\tTD_h+s2(%)\tT_h+s2\t"
+                          "Q_h+s2L(%)\tDt_h+s2L(%)\tTD_h+s2L(%)\tT_h+s2L\t"
+                          "Q_h+s2L'(%)\tDt_h+s2L'(%)\tTD_h+s2L'(%)\tT_h+s2L'\t"
+                          "\n");
 
     for (const string input_dir : input_dirs)
-        heavy_tester(la_dw, la_up, input_dir, output_dir, numb_tests, log_avgs);
+        heavy_with_sat_versionsComparer(la_dw, la_up, la_dw_sat, la_up_sat, max_attempts_sat, input_dir, numb_tests, log_avgs);
 
     writeToFile(log_avgs, "\nThe End\n");
 
@@ -341,8 +966,8 @@ void combined_relation_tester(unsigned int la_dw, unsigned int la_up,
     {
         string autStr = VATA::Util::ReadFile(filenames.at(i));
         /* Parsing and taking data from the automaton. */
-        stateDict stateDict;
-        AutData autData = parseFromString(autStr,stateDict);
+        stateDict sDict;
+        AutData autData = parseFromString(autStr,sDict);
 
         if (getNumbTransitions(autData) == 0)
             continue;
@@ -357,7 +982,7 @@ void combined_relation_tester(unsigned int la_dw, unsigned int la_up,
         string header2 = "Q reduction (%) \t Delta reduction (%) \t TransDens reduction (%) \n";
         writeToFile(log_machread_filename, header2);
 
-        applyQuotCombinedPreorder(autData, stateDict, metaData, la_dw, la_up, /*ranks,*/ testData, timeout,
+        applyQuotCombinedPreorder(autData, metaData, la_dw, la_up, testData, timeout,
                                   log_humanread_filename, log_machread_filename, log_machread_times_filename);
 
     }
