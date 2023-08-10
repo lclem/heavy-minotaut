@@ -16,7 +16,7 @@
 #include <memory>
 #include <unordered_set>
 #include <cstddef>
-
+#include <cmath>
 
 // VATA headers
 #include <vata/explicit_lts.hh>

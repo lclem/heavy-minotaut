@@ -6,18 +6,17 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 # Enable fancy colours
 set(CMAKE_COLOR_MAKEFILE ON)
 # Enable verbose output for 'make'
-# set(CMAKE_VERBOSE_MAKEFILE ON)
-
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 ##############################################################################
 #                             OUTPUT CUSTOMIZATION
 ##############################################################################
 
 # Avoid dynamic linking of libraries?
-OPTION(MAKE_STATIC_VATA "make static library" OFF)
+OPTION(MAKE_STATIC_VATA "make static library" ON)
 
 # The default C++ compiler
-set(DEFAULT_CXX_COMPILER "g++") 
+set(DEFAULT_CXX_COMPILER "g++-6")
 
 # Build with Clang? -- currently does nothing, initialize with
 #   $ CXX=clang++ make debug
@@ -131,6 +130,12 @@ if (DEBUG_INFO_FOR_RELEASE)
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g")
 	message("-- Enabling debug information for RELEASE builds")
 endif()
+
+set(CMAKE_C_FLAGS_RELEASE  "${CMAKE_C_FLAGS_RELEASE} -Wold-style-cast")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wold-style-cast")
+
+set(CMAKE_C_FLAGS_DEBUG  "${CMAKE_C_FLAGS_DEBUG} -Wold-style-cast")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wold-style-cast")
 
 ##############################################################################
 #                                 PROJECT

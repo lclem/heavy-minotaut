@@ -23,6 +23,8 @@
 	#define DEBUG 0
 #endif
 
+#define BOOST_MESSAGE(msg) BOOST_TEST_MESSAGE(msg)
+
 #define VATA_LOG_PREFIX (std::string(__FILE__ ":" + VATA::Util::Convert::ToString(__LINE__) + ": "))
 
 /// @todo: maybe change logging to something like Boost::Log or Google's logging stuff?

@@ -5,8 +5,8 @@
 ############################################################################################
 
  CFLAGS=-std=c++11 \
-  -pedantic-errors \
-  -Wextra \
+#  -pedantic-errors \
+#  -Wextra \
   -Wall \
   -Wsign-compare \
   -Wfloat-equal \
@@ -25,6 +25,7 @@
   -Winit-self \
   -ftrapv \
   -fdiagnostics-show-option \
+  -Wctor-dtor-privacy \
   -g
 
 
@@ -34,9 +35,9 @@
 
 INCLUDE=-Iinclude/
 INCLUDE_LVATA=-I../ondrik-libvata/include
-LIBS_ADD=-L../ondrik-libvata/build/src
+LIBS_ADD=-L../ondrik-libvata/build/src -L/usr/local/lib
 LIBS=-lvata -lboost_system -lboost_filesystem
-SRCS= $(wildcard src/*.cpp) $(wildcard src/*\/*.cpp) $(wildcard src/*\/*\/*.cpp)  # depth = 3
+SRCS= $(wildcard src/*.cpp) $(wildcard src/Common/*.cpp) $(wildcard src/*\/*.cpp) $(wildcard src/*\/*\/*.cpp)  # depth = 3
 OBJS = $(patsubst src/%.cpp,build/%.o,$(SRCS))
 TESTERS= $(wildcard testers/*.cpp) $(wildcard testers/*\/*.cpp) $(wildcard testers/*\/*\/*.cpp)  # depth = 3
 OBJS_TESTERS = $(patsubst %.cpp,build/%.o,$(TESTERS))
@@ -55,13 +56,13 @@ notOpt: clean_NotOpt minotaut_NotOpt
 
 
 minotaut: $(OBJS) $(OBJS_TESTERS)
-	g++ -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $^ $(LIBS_ADD) $(LIBS) -o $@ 
+	$(CXX) -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $^ $(LIBS_ADD) $(LIBS) -o $@ 
 
 build/testers/%.o: testers/%.cpp 
-	g++ -c -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $< -o $@ 
+	$(CXX) -c -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $< -o $@ 
 
 build/%.o: src/%.cpp 
-	g++ -c -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $< -o $@ 
+	$(CXX) -c -O3 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $< -o $@ 
 
 delete_objs:
 	$(RM) $(OBJS) $(OBJS_TESTERS)
@@ -73,13 +74,13 @@ clean: delete_objs
 # For debugging we use -g (enables symbols) and also the lowest optimization level -O0
 
 minotaut_NotOpt: $(OBJS_NOT_OPT) $(OBJS_TESTERS_NOT_OPT)
-	g++ -g -O0 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $^ $(LIBS_ADD) $(LIBS) -o $@ 
+	$(CXX) -g -O0 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $^ $(LIBS_ADD) $(LIBS) -o $@ 
 
 buildNotOpt/testers/%.o: testers/%.cpp 
-	g++ -g -c -O0 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $< -o $@ 
+	$(CXX) -g -c -O0 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $< -o $@ 
 
 buildNotOpt/%.o: src/%.cpp 
-	g++ -g -c -O0 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $< -o $@ 
+	$(CXX) -g -c -O0 $(CFLAGS) $(INCLUDE) $(INCLUDE_LVATA) $< -o $@ 
 
 delete_objs_NotOpt:
 	$(RM) $(OBJS_NOT_OPT) $(OBJS_TESTERS_NOT_OPT)
